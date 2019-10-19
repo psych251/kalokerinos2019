@@ -1,0 +1,76 @@
+
+# ----------------------------------------------------------- #
+# ---  Generated .gitignore file with create_gitignore.sh --- #
+# ------- User: ashish - Timestamp: 2019-10-19 14:59:17 ----- #
+# ----------------------------------------------------------- #
+
+# Mac files
+**/*.DS_Store
+
+# PyCharm
+**/*.idea
+
+# Virtualenv
+**/venv/
+**/env/
+
+# RStudio
+**/*.RData
+**/*.Rhistory
+**/*.Rproj.user/
+**/*.Rproj
+**/*.Rapp.history
+
+# Big Data
+**/*.mwi
+**/*.mwx
+**/*.bdf
+**/*.edf
+
+# Data
+**/*.csv
+**/*.tsv
+**/*.xlsx
+**/*.mat
+**/*.sav
+
+# Data
+**/raw/*
+!**/raw/README.md
+
+# MS Office
+**/*.pptx
+**/*.docx
+**/*.xlsx
+
+# Images
+**/*.jpg
+**/*.jpeg
+**/*.png
+**/*.bmp
+**/*.gif
+**/*.tiff
+
+# Sound
+**/*.wav
+**/*.aac
+**/*.ogg
+**/*.mp3
+**/*.aiff
+**/*.flac
+
+# LaTeX/Sweave
+**/*.tex
+**/*.synctex.gz
+
+# PDF
+**/*.pdf
+
+# Logs
+**/*.log
+
+# Authorization keys
+**/*.httr-oauth
+
+# ------- End generated .gitignore ------ #
+
