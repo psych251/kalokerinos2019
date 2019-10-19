@@ -64,7 +64,7 @@
 **/*.synctex.gz
 
 # PDF
-**/*.pdf
+#**/*.pdf
 
 # Logs
 **/*.log
