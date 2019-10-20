@@ -1,5 +1,5 @@
 ---
-title: "Reproduction of Study 1 by Kalokerinos, Erbas, Ceulemans, & Kuppens (2019, Psychological Science)"
+title: "Reproduction of Study 2 by Kalokerinos, Erbas, Ceulemans, & Kuppens (2019, Psychological Science)"
 author: "Ashish Mehta, ashm@stanford.edu"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output:
@@ -12,57 +12,74 @@ output:
 
 <!-- Replication reports should all use this template to standardize reporting across projects.  These reports will be public supplementary materials that accompany the summary report(s) of the aggregate results. -->
 
-##Introduction
+## Introduction
 
-[No abstract is needed.]  Each replication project will have a straightforward, no frills report of the study and results.  These reports will be publicly available as supplementary material for the aggregate report(s) of the project as a whole.  Also, to maximize project integrity, the intro and methods will be written and critiqued in advance of data collection.  Introductions can be just 1-2 paragraphs clarifying the main idea of the original study, the target finding for replication, and any other essential information.  It will NOT have a literature review -- that is in the original publication. You can write both the introduction and the methods in past tense.  
+> [No abstract is needed.]  Each replication project will have a straightforward, no frills report of the study and results.  These reports will be publicly available as supplementary material for the aggregate report(s) of the project as a whole.  Also, to maximize project integrity, the intro and methods will be written and critiqued in advance of data collection.  Introductions can be just 1-2 paragraphs clarifying the main idea of the original study, the target finding for replication, and any other essential information.  It will NOT have a literature review -- that is in the original publication. You can write both the introduction and the methods in past tense.  
+
+In Study 2 of the report "Differentiate to Regulate: Low Negative Emotion Differentiation Is Associated With Ineffective Use but Not Selection of Emotion-Regulation Strategies", Kalokerinos and colleagues, (2019) examined how the ability to make fine-grained distinctions between emotional states (i.e. emotion differentiation) was related to the selection and efficacy of emotion regulation (ER) strategies amidst a high-intensity emotional event. 
+
+The authors initiated students on a nine day experience sampling method (ESM) regimen two days prior to the students receiving a highly-consequential test result. The student participants completed ten surveys per day for the nine days delivered via an application on their smart phones. Since the present study concerns regulation *after* and emotional event, only data collected after the results were released is analyzed, resulting in 7 days of ESM data.
+
+The data collected in each survey were:
+
+* ratings of six discrete negative emotions (sad, angry, disappointed, ashamed, anxious, stressed) on a scale of 1-100 in response to thinking about the participant's grade on the exam
+
+* ratings of the use of six ER strategies (rumination, distraction, reappraisal, expressive suppression, social sharing, acceptance) on a 7-point scale
+
+* score on the students' test, (dichotimized in the analysis into passing and failing groups).
+
+I chose to reproduce this result for two reasons. The first and primary reason is that I am collecting EMA data where I plan to do a similar type of lagged panel model. Reproducing this analysis will provide helpful practice in this type of modeling. The second reason is that I am interested in relationships between emotion differentiation abilities and emotion regulation processes. Thus, the results of this paper are of personal importance to me. 
+
+The Github repository containing all the materials for this reproduction can be found [here](https://github.com/psych251/kalokerinos2019). The original research report PDF can be found [here](https://github.com/psych251/kalokerinos2019/blob/master/original_paper/kalokerinos2019.pdf).
+
+## Methods
+
+### Power Analysis
+
+> Original effect size, power analysis for samples to achieve 80%, 90%, 95% power to detect that effect size.  Considerations of feasibility for selecting planned sample size.
+
+### Planned Sample
+
+> Planned sample size and/or termination rule, sampling frame, known demographics if any, preselection rules if any.
+
+### Materials
+
+> All materials - can quote directly from original article - just put the text in quotations and note that this was followed precisely.  Or, quote directly and just point out exceptions to what was described in the original article.
+
+### Procedure	
+
+> Can quote directly from original article - just put the text in quotations and note that this was followed precisely.  Or, quote directly and just point out exceptions to what was described in the original article.
+
+### Analysis Plan
+
+> Can also quote directly, though it is less often spelled out effectively for an analysis strategy section.  The key is to report an analysis strategy that is as close to the original - data cleaning rules, data exclusion rules, covariates, etc. - as possible.  
+
+> **Clarify key analysis of interest here**  You can also pre-specify additional analyses you plan to do.
+
+### Differences from Original Study
+
+> Explicitly describe known differences in sample, setting, procedure, and analysis plan from original study.  The goal, of course, is to minimize those differences, but differences will inevitably occur.  Also, note whether such differences are anticipated to make a difference based on claims in the original article or subsequent published research on the conditions for obtaining the effect.
 
 
-
-##Methods
-
-###Power Analysis
-
-Original effect size, power analysis for samples to achieve 80%, 90%, 95% power to detect that effect size.  Considerations of feasibility for selecting planned sample size.
-
-###Planned Sample
-
-Planned sample size and/or termination rule, sampling frame, known demographics if any, preselection rules if any.
-
-###Materials
-
-All materials - can quote directly from original article - just put the text in quotations and note that this was followed precisely.  Or, quote directly and just point out exceptions to what was described in the original article.
-
-###Procedure	
-
-Can quote directly from original article - just put the text in quotations and note that this was followed precisely.  Or, quote directly and just point out exceptions to what was described in the original article.
-
-###Analysis Plan
-
-Can also quote directly, though it is less often spelled out effectively for an analysis strategy section.  The key is to report an analysis strategy that is as close to the original - data cleaning rules, data exclusion rules, covariates, etc. - as possible.  
-
-**Clarify key analysis of interest here**  You can also pre-specify additional analyses you plan to do.
-
-###Differences from Original Study
-
-Explicitly describe known differences in sample, setting, procedure, and analysis plan from original study.  The goal, of course, is to minimize those differences, but differences will inevitably occur.  Also, note whether such differences are anticipated to make a difference based on claims in the original article or subsequent published research on the conditions for obtaining the effect.
+#### -------------------------------------------------- #### 
 
 ### Methods Addendum (Post Data Collection)
 
-You can comment this section out prior to final report with data collection.
+> You can comment this section out prior to final report with data collection.
 
 #### Actual Sample
-  Sample size, demographics, data exclusions based on rules spelled out in analysis plan
+  > Sample size, demographics, data exclusions based on rules spelled out in analysis plan
 
 #### Differences from pre-data collection methods plan
-  Any differences from what was described as the original plan, or “none”.
+  > Any differences from what was described as the original plan, or “none”.
 
 
-##Results
+## Results
 
 
 ### Data preparation
 
-Data preparation following the analysis plan.
+> Data preparation following the analysis plan.
 	
 ```{r include=F}
 ###Data Preparation
@@ -78,20 +95,20 @@ Data preparation following the analysis plan.
 
 ### Confirmatory analysis
 
-The analyses as specified in the analysis plan.  
+> The analyses as specified in the analysis plan.  
 
 *Side-by-side graph with original graph is ideal here*
 
-###Exploratory analyses
+### Exploratory analyses
 
-Any follow-up analyses desired (not required).  
+> Any follow-up analyses desired (not required).  
 
 ## Discussion
 
 ### Summary of Replication Attempt
 
-Open the discussion section with a paragraph summarizing the primary result from the confirmatory analysis and the assessment of whether it replicated, partially replicated, or failed to replicate the original result.  
+> Open the discussion section with a paragraph summarizing the primary result from the confirmatory analysis and the assessment of whether it replicated, partially replicated, or failed to replicate the original result.  
 
 ### Commentary
 
-Add open-ended commentary (if any) reflecting (a) insights from follow-up exploratory analysis, (b) assessment of the meaning of the replication (or not) - e.g., for a failure to replicate, are the differences between original and present study ones that definitely, plausibly, or are unlikely to have been moderators of the result, and (c) discussion of any objections or challenges raised by the current and original authors about the replication attempt.  None of these need to be long.
+> Add open-ended commentary (if any) reflecting (a) insights from follow-up exploratory analysis, (b) assessment of the meaning of the replication (or not) - e.g., for a failure to replicate, are the differences between original and present study ones that definitely, plausibly, or are unlikely to have been moderators of the result, and (c) discussion of any objections or challenges raised by the current and original authors about the replication attempt.  None of these need to be long.
