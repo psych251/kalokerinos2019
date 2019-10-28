@@ -18,7 +18,7 @@ output:
 
 In Study 2 of the report "Differentiate to Regulate: Low Negative Emotion Differentiation Is Associated With Ineffective Use but Not Selection of Emotion-Regulation Strategies", Kalokerinos and colleagues, (2019) examined how the ability to make fine-grained distinctions between emotional states (i.e. emotion differentiation) was related to the selection and efficacy of emotion regulation (ER) strategies amidst a high-intensity emotional event. 
 
-The authors initiated students on a nine day experience sampling method (ESM) regimen two days prior to the students receiving a highly-consequential test result. The student participants completed ten surveys per day for the nine days delivered via an application on their smart phones. Since the present study concerns regulation *after* and emotional event, only data collected after the results were released is analyzed, resulting in 7 days of ESM data.
+The authors initiated students on a nine day experience sampling method (ESM) regimen two days prior to the students receiving a highly-consequential test result. The student participants completed ten surveys per day for the nine days delivered via an application on their smart phones or via a special mobile phone provided by the experimenters. Since the present study concerns regulation *after* and emotional event, only data collected after the results were released are analyzed, resulting in 7 days of ESM data.
 
 The data collected in each survey were:
 
@@ -38,17 +38,40 @@ The Github repository containing all the materials for this reproduction can be 
 
 > Original effect size, power analysis for samples to achieve 80%, 90%, 95% power to detect that effect size.  Considerations of feasibility for selecting planned sample size.
 
-### Planned Sample
+### Sample
 
 > Planned sample size and/or termination rule, sampling frame, known demographics if any, preselection rules if any.
+
+The sample for this dataset consisted of first-year Belgian undergraduate students. The planned *N* was 100 participants which would have 80% power to detect a medium effect (*r* = .30, *α* = .05). The final *N* for the study was 101 participants (14 males; age: *M* = 18.64, *SD* = 1.45). Participans were recruited through a university research participation program and through social media. The authors had a predetermined rule for omission of participants with less than 50% completion, but no participants met this criterion so all were included in analysis. Participants were awarded compensation on a basis commensurate with their study completion percentage.
+
+
 
 ### Materials
 
 > All materials - can quote directly from original article - just put the text in quotations and note that this was followed precisely.  Or, quote directly and just point out exceptions to what was described in the original article.
 
+The materials for the study are taken directly from the original paper and copied below:
+
+> ##### Negative emotion. 
+>Six emotions (sad, angry, disappointed, ashamed, anxious, stressed) were assessed on a 100-point scale (1 = not at all, 100 = very much). The item stem was “When you think about your grades right now, how [emotion] are you feeling?” (R~KF~ = .99, R~C~ = .74). In this study, we updated this measure to include emotions relevant to the context of receiving learning outcomes (Pekrun, 2006). We kept “sad,” “angry,” “anxious,” and “stressed” from Study 1, as the former three are also learning-related emotions (Pekrun, 2006), and continuity across studies allowed for comparison. However, differentiation should replicate across the inclusion of different emotions if each of the emotions provides new information. We added “disappointed” and “ashamed” because of their centrality in retrospectively evaluating learning outcomes (Pekrun, 2006).
+
+> ##### Negative-emotion differentiation. 
+>As in Study 1, we took the ICC between negative emotions within-person across measurement occasions, applied a Fisher’s z transformation, and then reverse scored it so higher numbers equaled higher differentiation. There were no negative ICCs.
+
+> ##### Emotion-regulation strategies. 
+> We assessed six strategies on a 7-point scale (0 = not at all, 6 = very much). The item stem was “Since the last beep, have you . . .” Five strategies from Study 1 were reworded to assess grade-relevant regulation: rumination (“ruminated about your grades?”), distraction (“distracted yourself from your grades and the associated emotions?”), reappraisal (“looked at your grades or the emotions that go with them from another perspective?”), expressive suppression (“suppressed the outward expression of your emotions about your grades?”), and social sharing (“talked to others about your grades and the associated emotions?”). We also included acceptance (“accepted your emotions about your grades the way they are?”).
+
+> ##### Percentage passed. 
+> For each subject, participants reported scores out of 20, with 10 and above being a passing grade and below 10 a failing grade. Failing requires retaking the exam later in the year or, in the case of too many failures, termination of enrollment. Given the clear emotional line at passing, we dichotomized scores on each subject as fail (1–9) or pass (10–20) and calculated the percentage of subjects passed across all subjects taken. This percentage variable was highly correlated with mean score out of 20 across exams (*r* = .90), and we found no differences in reported results when using mean score instead of percentage passed. In the baseline survey, we assessed participants' expectations about their upcoming exam grades using the same measure. We used this to compute an expected-percentage-passed variable. Including both expected and actual passing percentage, or the difference between actual and expected passing percentage, did not substantively change our results. Thus, we focus on actual passing percentage.
+
+
 ### Procedure	
 
 > Can quote directly from original article - just put the text in quotations and note that this was followed precisely.  Or, quote directly and just point out exceptions to what was described in the original article.
+
+The procedure for data collection is copied from the original article below:
+
+>Three days before receiving results, participants came to a lab session where they were trained on the ESM protocol. Participants were told that the study was about emotions and exams but were not given details about specific hypotheses. They then completed the ESM phase. On results-release day, within a 2-hr period, students were notified by e-mail that results were available in an online portal and asked to check them immediately. On this day, participants were sent a link to an online survey asking them to report their grade for each subject. For the ESM protocol, participants with a compatible personal Android phone installed mobileQ (*N* = 28). Other participants were given a research-only smartphone (*N* = 73). Participants completed 9 consecutive days of experience sampling: 2 days before the results release and 7 days after. We used a stratified random-interval scheme that sent a random signal within 10 equal intervals between 10:00 a.m. and 10:00 p.m. There was some variability in when results were released: Participants received their results between surveys 21 and 28 of 90. We were interested in regulation in response to results, and thus we included only post-results surveys, meaning that participants received between 63 and 70 surveys (*M* = 68.69). Participants received a signal on average every 71.9 min (*SD* = 29.8) and completed an average of 90.5% of signals (*SD* = 7.8%).
 
 ### Analysis Plan
 
@@ -56,12 +79,25 @@ The Github repository containing all the materials for this reproduction can be 
 
 > **Clarify key analysis of interest here**  You can also pre-specify additional analyses you plan to do.
 
+The data analysis conducted in the original study consisted of two model structures built separately with each of the six emotion regulation strategies, resulting in twelve total models. The description of the data analytic strategy from the original article is copied below:
+
+> #### Data-analytic strategy
+> As in Study 1, we used *lme4* (Bates et al., 2015) to fit mixed-effects models and standardized variables for analyses. We ran two-level models, with measurement occasions (*N* = 6,282) nested within persons (*N* = 101). In these models, we included percentage pass as a proxy for the emotional intensity of the stimulus. However, because we did not have the necessary statistical power, we did not estimate a three-way interaction with this variable. Strategies and negative emotion were measured at the occasion level, and differentiation and percentage passed at the person level. We found no substantive differences in either model when person-level negative emotion was included, but we included this variable in Model 1 to replicate Study 1.
+
+> ##### Model 1: emotion differentiation as a predictor of emotion-regulation strategies. 
+> In Model 1, we used differentiation, percentage passed, and negative emotion, which were grand-mean centered, to predict each strategy separately (six models). We included random intercepts per participant.
+
+> ##### Model 2: Emotion Differentiation × Emotion Regulation Strategies predicting negative emotion. 
+> In Model 2, we used differentiation, regulation, their cross-level interaction, and percentage passed to predict negative emotion (separately for each strategy; six models). We included lagged negative emotion (at the previous time point) to model emotional change, again excluding overnight lags. We person-mean-centered regulation and lagged emotion and grand-mean-centered differentiation and percentage passed. We included random intercepts per participant. For each participant, we included random slopes for regulation and lagged emotion, and we allowed these slopes to covary. There was one exception to this strategy: The acceptance model would not converge until we removed the random slope for acceptance, so we report this model with this random slope omitted.
+
 ### Differences from Original Study
 
 > Explicitly describe known differences in sample, setting, procedure, and analysis plan from original study.  The goal, of course, is to minimize those differences, but differences will inevitably occur.  Also, note whether such differences are anticipated to make a difference based on claims in the original article or subsequent published research on the conditions for obtaining the effect.
 
+Since this is an analysis reproduction, the data will be exactly the same. I plan to run this analysis using *lme4* just as the authors did. I will also conduct the same analysis using the *brms* Bayesian Regression package in R so I can compare the credible intervals and expected values of the posterior distributions with the confidence intervals and point estimates given by the *lme4* linear mixed model framework.
 
-#### -------------------------------------------------- #### 
+
+
 
 ### Methods Addendum (Post Data Collection)
 
@@ -81,16 +117,285 @@ The Github repository containing all the materials for this reproduction can be 
 
 > Data preparation following the analysis plan.
 	
-```{r include=F}
-###Data Preparation
 
-####Load Relevant Libraries and Functions
+#### Load Relevant Libraries and Functions
+```{r}
+rm(list = ls())
+library(tidyverse)
+library(haven)
+library(psych)
+theme_set(theme_minimal())
 
-####Import data
+```
+
+
+#### Import data
+```{r}
+df_raw <- read_sav("/Users/ashish/files/phd_coursework/fall_2019/psy_251_methods/replication/kalokerinos2019/data/Study 2_exam.sav")
+
+```
+
 
 #### Data exclusion / filtering
+```{r}
+
+```
+
 
 #### Prepare data for analysis - create columns etc.
+
+#### Compute ICC of negative emotions as a measure of emotion differentiation for each participant
+
+Column names of particular emotion valence 
+```{r}
+neg_emo_cols <- c("emotion_sad", "emotion_angry", "emotion_disapp",
+                  "emotion_ashamed", "emotion_anxious", "emotion_stressed")
+pos_emo_cols <- c("emotion_proud", "emotion_happy", "emotion_content", "emotion_relief")
+```
+
+Create negative and positive composite scores
+Create lagged emotion intensity variables excluding overnight lags
+```{r}
+df <- df_raw %>%
+  # ---- Create lagged emotion vars ---- #
+  mutate(
+    lag_emotion_sad = lag(emotion_sad),
+    lag_emotion_angry = lag(emotion_angry),
+    lag_emotion_disapp = lag(emotion_disapp),
+    lag_emotion_ashamed = lag(emotion_ashamed),
+    lag_emotion_anxious = lag(emotion_anxious),
+    lag_emotion_stressed = lag(emotion_stressed),
+    lag_emotion_proud = lag(emotion_proud),
+    lag_emotion_happy = lag(emotion_happy),
+    lag_emotion_content = lag(emotion_content),
+    lag_emotion_relief = lag(emotion_relief)
+  ) %>% 
+  # ---- Create variable for the day of month to use for removing overnight lags ---- #
+  mutate(
+    date = strftime(ScheduledTime, "%d")
+  ) %>% 
+  # ---- Remove overnight lags ---- #
+  arrange(Participant, beepnum) %>% 
+  group_by(Participant, date) %>% 
+  mutate_at(vars(matches("emotion_.*_lag")), function(x){ifelse(row_number() == 1, NA, x)}) %>% 
+  ungroup %>% 
+  # ---- Create emotion intensity composite scores ---- #
+  mutate(
+    neg_emo_mean = rowMeans(df_raw[,neg_emo_cols], na.rm = T),
+    pos_emo_mean = rowMeans(df_raw[,pos_emo_cols], na.rm = T)
+  ) %>% 
+  # ---- Create lagged emotion intensity composite scores ---- #
+  # mutate(
+  #   neg_emo_mean_lag = rowMeans(df[,paste0("lag_", neg_emo_cols)]),
+  #   pos_emo_mean_lag = rowMeans(df[,paste0("lag_", pos_emo_cols)])
+  # ) 
+  mutate(
+    neg_emo_mean_lag = rowMeans(select(.,paste0("lag_", neg_emo_cols))),
+    pos_emo_mean_lag = rowMeans(select(.,paste0("lag_", pos_emo_cols)))
+  ) 
+    
+  
+```
+
+
+
+Function to calculate ICC stats in row form
+```{r}
+compute_icc <- function(dat) {
+  dat %>%
+    select(neg_emo_cols) %>% 
+    irr::icc(model="oneway") %>%       
+    unlist() %>%        
+    t() %>%              
+    as_tibble() %>%      
+    select(              
+      stimuli = subjects,
+      raters, 
+      icc = value,       
+      lbound, 
+      ubound
+    ) %>%
+    mutate_at(vars(stimuli, raters), as.integer) %>% 
+    mutate_at(vars(icc:ubound), as.numeric)
+}
+```
+
+Create dataframe of ICCs for each participant
+```{r}
+icc_df <- df %>%
+  group_by(Participant) %>%              
+  nest() %>%                             
+  mutate(icc = map(data, compute_icc)) %>%    
+  unnest(icc) %>%                        
+  select(-data) %>% 
+  ungroup %>% 
+  mutate(ed_score = (fisherz(icc)*-1))
+  
+```
+
+Merge ICC dataframe to full data
+```{r}
+df <- icc_df %>% 
+  select(Participant, icc, ed_score) %>% 
+  right_join(df, by="Participant") 
+
+```
+
+
+
+### Initial data viz
+
+
+Visualizing participant compliance
+```{r}
+df %>% 
+  group_by(Participant) %>% 
+  summarize(proportion_complete = sum(!is.na(ExecutionTime))/90) %>% 
+  ungroup %>% 
+  ggplot(aes(x = proportion_complete)) + 
+  geom_histogram(binwidth = .02) +
+  # geom_density() + 
+  labs(x = "Proportion complete")
+```
+#### Visualizing emotion characteristics
+
+To what degree did people experience different emotions?
+```{r}
+df %>% 
+  group_by(Participant) %>% 
+  summarize_at(vars(starts_with("emotion_")), mean, na.rm=T) %>% 
+  pivot_longer(cols = -Participant, names_to = "emotion_type", values_to = "emotion_rating") %>% 
+  mutate(emotion_type = str_replace_all(emotion_type, "emotion_", ""),
+         emotion_type = reorder(emotion_type, emotion_rating, mean)) %>% 
+  
+  ggplot(aes(x = emotion_type, y = emotion_rating)) +
+  geom_bar(stat="summary") +
+  theme(axis.text.x = element_text(angle=90)) +
+  labs(y = "Mean emotion intensity")
+  
+```
+
+How were different emotions related to the percentage of exams passed?
+```{r}
+df %>% 
+  group_by(Participant, perc_pass) %>% 
+  summarize_at(vars(starts_with("emotion_")), mean, na.rm=T) %>% 
+  pivot_longer(cols = c(-Participant, -perc_pass), names_to = "emotion_type", values_to = "emotion_rating") %>% 
+  mutate(emotion_type = str_replace_all(emotion_type, "emotion_", ""),
+         emotion_type = reorder(emotion_type, emotion_rating, mean))  %>% 
+  
+  ggplot(aes(x = perc_pass, y = emotion_rating, color = emotion_type)) +
+  geom_jitter(alpha = .2) +
+  geom_smooth(se=F) +
+  theme(axis.text.x = element_text(angle=90)) +
+  labs(y = "emotion intensity")
+```
+
+```{r, fig.asp=2}
+df %>% 
+  group_by(Participant, perc_pass) %>% 
+  summarize_at(vars(starts_with("emotion_")), mean, na.rm=T) %>% 
+  pivot_longer(cols = c(-Participant, -perc_pass), names_to = "emotion_type", values_to = "emotion_rating") %>% 
+  mutate(emotion_type = str_replace_all(emotion_type, "emotion_", ""),
+         emotion_type = reorder(emotion_type, emotion_rating, mean))  %>% 
+  
+  ggplot(aes(x = perc_pass, y = emotion_rating, color = emotion_type)) +
+  facet_grid(emotion_type ~.) +
+  geom_jitter(alpha = .2) +
+  geom_smooth() +
+  theme(axis.text.x = element_text(angle=90)) +
+  labs(y = "emotion intensity")
+  
+```
+
+What is the relationship between percentage of exams passed and negative emotion?
+```{r}
+df %>% 
+  group_by(Participant, perc_pass) %>% 
+  summarize_at(vars(starts_with("emotion_")), mean, na.rm=T) %>% 
+  pivot_longer(cols = c(-Participant, -perc_pass), names_to = "emotion_type", values_to = "emotion_rating") %>% 
+  filter(emotion_type %in% neg_emo_cols) %>% 
+  mutate(emotion_type = str_replace_all(emotion_type, "emotion_", ""),
+         emotion_type = reorder(emotion_type, emotion_rating, mean))  %>% 
+  summarize(mean_neg_emo = mean(emotion_rating),
+            perc_pass = perc_pass[1]) %>% 
+  
+  ggplot(aes(x = perc_pass, y = mean_neg_emo)) +
+  geom_jitter(alpha = .2) +
+  geom_smooth() +
+  labs(x = "Percentage of exams passed", y = "Mean negative emotion")
+```
+
+
+How is negative emotion differentiation related to the amount of negative emotion experienced?
+
+Interestingly, it appears that average emotion intensity goes up and emotion differentiation skills go up. One might expect that we would see lower emotional intensity for better differentiators since emotion differentiation is considered an adaptive skill.
+```{r}
+df %>% 
+  # ---- get a mean emotion score for each emotion for each participant ---- #
+  group_by(Participant, ed_score) %>% 
+  summarize_at(vars(starts_with("emotion_")), mean, na.rm=T) %>% 
+  select(-pos_emo_cols) %>% 
+  # ---- elongate ---- #
+  pivot_longer(cols = c(-Participant, -ed_score), names_to = "emotion_type", values_to = "emotion_rating") %>% 
+  mutate(emotion_type = str_replace_all(emotion_type, "emotion_", ""),
+         emotion_type = reorder(emotion_type, emotion_rating, mean)) %>% 
+  
+  ggplot(aes(x = ed_score, y = emotion_rating, color = emotion_type)) +
+  geom_point(alpha = .2) +
+  geom_smooth(method = "loess", se=F) +
+  geom_smooth(aes(group = 1), linetype = "dotted") +
+  labs(y = "emotion intensity")
+```
+
+
+#### Visualizing regulation characteristics
+
+To what degree did people use different strategies?
+```{r}
+df %>% 
+  group_by(Participant) %>% 
+  summarize_at(vars(starts_with("ER_")), mean, na.rm=T) %>% 
+  pivot_longer(cols = -Participant, names_to = "strategy_type", values_to = "strategy_rating") %>% 
+  mutate(strategy_type = str_replace_all(strategy_type, "ER_", ""),
+         strategy_type = reorder(strategy_type, strategy_rating, mean)) %>% 
+  
+  ggplot(aes(x = strategy_type, y = strategy_rating)) +
+  geom_bar(stat="summary") +
+  theme(axis.text.x = element_text(angle=90)) +
+  scale_y_continuous(limits = c(0,6)) +
+  labs(y = "Mean strategy use")
+  
+```
+
+How were different strategies related to the percentage of exams passed?
+```{r}
+df %>% 
+  group_by(Participant, perc_pass) %>% 
+  summarize_at(vars(starts_with("ER_")), mean, na.rm=T) %>% 
+  pivot_longer(cols = c(-Participant, -perc_pass), names_to = "strategy_type", values_to = "strategy_rating") %>% 
+  mutate(strategy_type = str_replace_all(strategy_type, "ER_", ""),
+         strategy_type = reorder(strategy_type, strategy_rating, mean))  %>% 
+  
+  ggplot(aes(x = perc_pass, y = strategy_rating, color = strategy_type)) +
+  geom_jitter(alpha = .2) +
+  geom_smooth(method = "lm", se=F) +
+  theme(axis.text.x = element_text(angle=90)) +
+  labs(y = "emotion intensity")
+
+```
+
+How does emotion intensity at time t-1 relate to ER strategy at time t
+```{r, fig.asp=1.5}
+df %>% 
+  pivot_longer(cols = starts_with("ER_"), names_to = "strategy_type", values_to = "strategy_rating") %>% 
+  
+  ggplot(aes(x = neg_emo_mean_lag, y = strategy_rating)) +
+  facet_grid(strategy_type~.) +
+  geom_jitter(alpha = .05, size = .5) +
+  geom_smooth(method = "lm") +
+  labs(x = "Emotion intensity at t-1", y = "Use of ER strategy")
+
 ```
 
 ### Confirmatory analysis
