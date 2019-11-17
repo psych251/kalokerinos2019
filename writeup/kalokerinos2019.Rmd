@@ -12,6 +12,17 @@ output:
 
 <!-- Replication reports should all use this template to standardize reporting across projects.  These reports will be public supplementary materials that accompany the summary report(s) of the aggregate results. -->
 
+Hi Ashish, excellent job on your presentation today! Mike and I typed up some notes during your presentation, which I've pasted below:
+
+How does one diagnose “emotion differentiation ability”? How to verify whether self-report is “correct”? Or is it just about variability. From what I hear it looks like it’s more about reported variation/fluctuation(?)
+-In other words, the name of the construct could be misleading
+
+What are the false discovery controls in these statistical analyses? 
+
+Great to try the brms version of these, that’ll be super interesting. Make sure to take a look at the docs on the default priors (see this thread: https://github.com/paul-buerkner/brms/issues/131).
+
+What fit indices will you look at for the RI-CPLM?
+
 ## Introduction
 
 > [No abstract is needed.]  Each replication project will have a straightforward, no frills report of the study and results.  These reports will be publicly available as supplementary material for the aggregate report(s) of the project as a whole.  Also, to maximize project integrity, the intro and methods will be written and critiqued in advance of data collection.  Introductions can be just 1-2 paragraphs clarifying the main idea of the original study, the target finding for replication, and any other essential information.  It will NOT have a literature review -- that is in the original publication. You can write both the introduction and the methods in past tense.  
@@ -124,6 +135,7 @@ rm(list = ls())
 library(tidyverse)
 library(haven)
 library(psych)
+library(here)
 theme_set(theme_minimal())
 
 ```
@@ -131,7 +143,7 @@ theme_set(theme_minimal())
 
 #### Import data
 ```{r}
-df_raw <- read_sav("/Users/ashish/files/phd_coursework/fall_2019/psy_251_methods/replication/kalokerinos2019/data/Study 2_exam.sav")
+df_raw <- read_sav(here("data/Study 2_exam.sav"))
 
 ```
 
@@ -170,6 +182,15 @@ df <- df_raw %>%
     lag_emotion_content = lag(emotion_content),
     lag_emotion_relief = lag(emotion_relief)
   ) %>% 
+  # ---- Create lagged strategy vars ---- #
+  mutate(
+    lag_ER_rumination = lag(ER_rumination),
+    lag_ER_distraction = lag(ER_distraction),
+    lag_ER_acceptance = lag(ER_acceptance),
+    lag_ER_reapp = lag(ER_reapp),
+    lag_ER_supp = lag(ER_supp),
+    lag_ER_soc_sharing = lag(ER_soc_sharing)
+  ) %>% 
   # ---- Create variable for the day of month to use for removing overnight lags ---- #
   mutate(
     date = strftime(ScheduledTime, "%d")
@@ -204,7 +225,7 @@ Function to calculate ICC stats in row form
 compute_icc <- function(dat) {
   dat %>%
     select(neg_emo_cols) %>% 
-    irr::icc(model="oneway") %>%       
+    irr::icc(model="twoway", unit = "average") %>%       
     unlist() %>%        
     t() %>%              
     as_tibble() %>%      
@@ -255,8 +276,9 @@ df %>%
   ggplot(aes(x = proportion_complete)) + 
   geom_histogram(binwidth = .02) +
   # geom_density() + 
-  labs(x = "Proportion complete")
+  labs(x = "Proportion complete", x = "Number of participants")
 ```
+
 #### Visualizing emotion characteristics
 
 To what degree did people experience different emotions?
@@ -271,49 +293,107 @@ df %>%
   ggplot(aes(x = emotion_type, y = emotion_rating)) +
   geom_bar(stat="summary") +
   theme(axis.text.x = element_text(angle=90)) +
-  labs(y = "Mean emotion intensity")
+  labs(x = "Emotion type", y = "Mean emotion intensity")
   
 ```
 
 How were different emotions related to the percentage of exams passed?
 ```{r}
-df %>% 
+
+df_emotion_long <- df %>% 
   group_by(Participant, perc_pass) %>% 
   summarize_at(vars(starts_with("emotion_")), mean, na.rm=T) %>% 
-  pivot_longer(cols = c(-Participant, -perc_pass), names_to = "emotion_type", values_to = "emotion_rating") %>% 
+  pivot_longer(cols = c(-Participant, -perc_pass), 
+               names_to = "emotion_type", values_to = "emotion_rating") %>% 
   mutate(emotion_type = str_replace_all(emotion_type, "emotion_", ""),
-         emotion_type = reorder(emotion_type, emotion_rating, mean))  %>% 
-  
+         emotion_type = reorder(emotion_type, emotion_rating, mean))
+
+df_emotion_long  %>% 
   ggplot(aes(x = perc_pass, y = emotion_rating, color = emotion_type)) +
   geom_jitter(alpha = .2) +
   geom_smooth(se=F) +
   theme(axis.text.x = element_text(angle=90)) +
-  labs(y = "emotion intensity")
+  labs(x = "Proportion of exams passed", y = "Emotion intensity", color = "")
 ```
 
 ```{r, fig.asp=2}
-df %>% 
-  group_by(Participant, perc_pass) %>% 
-  summarize_at(vars(starts_with("emotion_")), mean, na.rm=T) %>% 
-  pivot_longer(cols = c(-Participant, -perc_pass), names_to = "emotion_type", values_to = "emotion_rating") %>% 
-  mutate(emotion_type = str_replace_all(emotion_type, "emotion_", ""),
-         emotion_type = reorder(emotion_type, emotion_rating, mean))  %>% 
-  
+df_emotion_long  %>% 
   ggplot(aes(x = perc_pass, y = emotion_rating, color = emotion_type)) +
   facet_grid(emotion_type ~.) +
   geom_jitter(alpha = .2) +
   geom_smooth() +
   theme(axis.text.x = element_text(angle=90)) +
-  labs(y = "emotion intensity")
+  labs(y = "Emotion intensity", x = "Percantage of exams passed")
   
 ```
 
+How did different emotions unfold over time?
+```{r}
+df %>% 
+  filter(exam_beepnum >= 0) %>% 
+  group_by(Participant) %>% 
+  ggplot(aes(x = exam_beepnum, y = neg_emo_mean)) + 
+  geom_jitter(alpha = .2, size = .4) +
+  geom_smooth() + 
+  geom_smooth(method="lm", linetype="dotted") +
+  labs(x = "EMA beep number", y = "Negative emotion mean")
+
+perc_pass_summary <- df %>% 
+  group_by(Participant) %>% 
+  summarize(perc_pass = mean(perc_pass, na.rm = T)) %>% 
+  summarize(mean = mean(perc_pass, na.rm = T),
+            sd = sd(perc_pass, na.rm = T))
+
+df %>% 
+  mutate(
+    perc_pass_group = case_when(
+      perc_pass > (perc_pass_summary$mean + perc_pass_summary$sd) ~ "high",
+      perc_pass < (perc_pass_summary$mean - perc_pass_summary$sd) ~ "low",
+      perc_pass < (perc_pass_summary$mean + perc_pass_summary$sd) &
+        perc_pass > (perc_pass_summary$mean - perc_pass_summary$sd) ~"mid"
+    )
+  ) %>% 
+  filter(perc_pass_group == "mid") %>% 
+  group_by(Participant, exam_beepnum) %>% 
+  summarize_at(vars(starts_with("emotion_")), mean, na.rm=T) %>% 
+  pivot_longer(cols = c(-Participant, -exam_beepnum), names_to = "emotion_type", values_to = "emotion_rating") %>% 
+  mutate(emotion_type = str_replace_all(emotion_type, "emotion_", ""),
+         emotion_type = reorder(emotion_type, emotion_rating, mean))  %>% 
+  
+  ggplot(aes(x = exam_beepnum, y = emotion_rating, color = emotion_type)) +
+  geom_jitter(alpha = .2, size = .1) +
+  geom_smooth(se=F) +
+  theme(axis.text.x = element_text(angle=90)) +
+  labs(x = "Ping number relative to exam result", y = "Emotion intensity", color = "")
+```
+
+Emotion over time broken down by emotion type
+```{r, fig.asp=2}
+df %>% 
+  group_by(Participant, exam_beepnum) %>% 
+  summarize_at(vars(starts_with("emotion_")), mean, na.rm=T) %>% 
+  pivot_longer(cols = c(-Participant, -exam_beepnum), names_to = "emotion_type", values_to = "emotion_rating") %>% 
+  mutate(emotion_type = str_replace_all(emotion_type, "emotion_", ""),
+         emotion_type = reorder(emotion_type, emotion_rating, mean))  %>% 
+  
+  ggplot(aes(x = exam_beepnum, y = emotion_rating, color = emotion_type)) +
+  facet_grid(emotion_type ~.) +
+  geom_jitter(alpha = .1, size = .2) +
+  geom_smooth() +
+  theme(axis.text.x = element_text(angle=90)) +
+  labs(x = "Ping number relative to exam result", y = "Emotion intensity")
+
+```
+
+
 What is the relationship between percentage of exams passed and negative emotion?
 ```{r}
+
 df %>% 
   group_by(Participant, perc_pass) %>% 
   summarize_at(vars(starts_with("emotion_")), mean, na.rm=T) %>% 
-  pivot_longer(cols = c(-Participant, -perc_pass), names_to = "emotion_type", values_to = "emotion_rating") %>% 
+  pivot_longer(cols = c(-Participant, -perc_pass), 
+               names_to = "emotion_type", values_to = "emotion_rating") %>% 
   filter(emotion_type %in% neg_emo_cols) %>% 
   mutate(emotion_type = str_replace_all(emotion_type, "emotion_", ""),
          emotion_type = reorder(emotion_type, emotion_rating, mean))  %>% 
@@ -345,7 +425,7 @@ df %>%
   geom_point(alpha = .2) +
   geom_smooth(method = "loess", se=F) +
   geom_smooth(aes(group = 1), linetype = "dotted") +
-  labs(y = "emotion intensity")
+  labs(y = "Emotion intensity", x = "Emotion differentiation score", color = "Negative emotion")
 ```
 
 
@@ -364,7 +444,7 @@ df %>%
   geom_bar(stat="summary") +
   theme(axis.text.x = element_text(angle=90)) +
   scale_y_continuous(limits = c(0,6)) +
-  labs(y = "Mean strategy use")
+  labs(x = "Regulation strategy", y = "Mean strategy use")
   
 ```
 
@@ -381,7 +461,7 @@ df %>%
   geom_jitter(alpha = .2) +
   geom_smooth(method = "lm", se=F) +
   theme(axis.text.x = element_text(angle=90)) +
-  labs(y = "emotion intensity")
+  labs(x = "Percentage of exams passed", y = "emotion intensity")
 
 ```
 
@@ -398,15 +478,69 @@ df %>%
 
 ```
 
+Does ED score predict use of strategies?
+```{r, fig.asp=1.5}
+df %>% 
+  pivot_longer(cols = starts_with("ER_"), names_to = "strategy_type", values_to = "strategy_rating") %>% 
+  
+  ggplot(aes(x = ed_score, y = strategy_rating)) +
+  facet_grid(strategy_type~.) +
+  geom_jitter(alpha = .05, size = .5) +
+  geom_smooth(method = "lm") +
+  labs(x = "Emotion differentiation score", y = "Use of ER strategy")
+
+```
 ### Confirmatory analysis
 
 > The analyses as specified in the analysis plan.  
 
 *Side-by-side graph with original graph is ideal here*
 
+Starting the modeling ...
+```{r}
+# df %>% 
+#   lmer(ER_rumination ~ ed_score + perc_pass + neg_emo_mean_lag + (1|Participant), .) %>% 
+#   summary
+# df %>% 
+#   lmer(ER_distraction ~ ed_score + perc_pass + neg_emo_mean_lag + (1|Participant), .) %>% 
+#   summary
+# df %>% 
+#   lmer(ER_acceptance ~ ed_score + perc_pass + neg_emo_mean_lag + (1|Participant), .) %>% 
+#   summary
+# df %>% 
+#   lmer(ER_reapp ~ ed_score + perc_pass + neg_emo_mean_lag + (1|Participant), .) %>% 
+#   summary
+# df %>% 
+#   lmer(ER_supp ~ ed_score + perc_pass + neg_emo_mean_lag + (1|Participant), .) %>% 
+#   summary
+# df %>% 
+#   lmer(ER_soc_sharing ~ ed_score + perc_pass + neg_emo_mean_lag + (1|Participant), .) %>% 
+#   summary
+```
+
+
 ### Exploratory analyses
 
 > Any follow-up analyses desired (not required).  
+
+```{r}
+
+# df_scaled <- df %>% 
+#   mutate_at(vars(matches(".*ER.*|.*emotion.*")), scale)
+# 
+# model <- '
+#     level: 1
+#         neg_emo =~ lag_emotion_angry + lag_emotion_disapp + lag_emotion_ashamed + lag_emotion_sad + lag_emotion_anxious
+#         neg_emo ~ ER_distraction
+#     level: 2
+#         neg_emo =~ lag_emotion_angry + lag_emotion_disapp + lag_emotion_ashamed + lag_emotion_sad + lag_emotion_anxious
+# '
+# fit <- lavaan::sem(model, data = df_scaled, cluster = "Participant", fixed.x = FALSE)
+# summary(fit)
+
+
+```
+
 
 ## Discussion
 
@@ -417,3 +551,9 @@ df %>%
 ### Commentary
 
 > Add open-ended commentary (if any) reflecting (a) insights from follow-up exploratory analysis, (b) assessment of the meaning of the replication (or not) - e.g., for a failure to replicate, are the differences between original and present study ones that definitely, plausibly, or are unlikely to have been moderators of the result, and (c) discussion of any objections or challenges raised by the current and original authors about the replication attempt.  None of these need to be long.
+
+### Analysis requirements
+```{r}
+sessionInfo()
+```
+
