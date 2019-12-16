@@ -10,7 +10,6 @@ output:
       collapsed: false
 ---
 
-
 ## Introduction
 
 > [No abstract is needed.]  Each replication project will have a straightforward, no frills report of the study and results.  These reports will be publicly available as supplementary material for the aggregate report(s) of the project as a whole.  Also, to maximize project integrity, the intro and methods will be written and critiqued in advance of data collection.  Introductions can be just 1-2 paragraphs clarifying the main idea of the original study, the target finding for replication, and any other essential information.  It will NOT have a literature review -- that is in the original publication. You can write both the introduction and the methods in past tense.  
@@ -25,7 +24,7 @@ The data collected in each survey were:
 
 * ratings of the use of six ER strategies (rumination, distraction, reappraisal, expressive suppression, social sharing, acceptance) on a 7-point scale
 
-* score on the students' test, (dichotimized in the analysis into passing and failing groups).
+* score on the students' test, (dichotimized in the analysis into passing and failing groups and then aggregated to create a 'percentage of exams passed' variable).
 
 I chose to reproduce this result for two reasons. The first and primary reason is that I am collecting EMA data where I plan to do a similar type of lagged panel model. Reproducing this analysis will provide helpful practice in this type of modeling. The second reason is that I am interested in relationships between emotion differentiation abilities and emotion regulation processes. Thus, the results of this paper are of personal importance to me. 
 
@@ -33,66 +32,11 @@ The Github repository containing all the materials for this reproduction can be 
 
 ## Methods
 
-### Power Analysis
+<!-- ### Power Analysis -->
 
-> Original effect size, power analysis for samples to achieve 80%, 90%, 95% power to detect that effect size.  Considerations of feasibility for selecting planned sample size.
-
-neg_emo_comp_sc ~ 
-    ed_score_sc*{x} +
-    perc_pass_sc + 
-    neg_emo_comp_lag_pc_sc +
-    ({x} + neg_emo_comp_lag_pc_sc | Participant)
+<!-- > Original effect size, power analysis for samples to achieve 80%, 90%, 95% power to detect that effect size.  Considerations of feasibility for selecting planned sample size. -->
     
-What parameters do I need to simulate data?
-
-    
-```{r}
-
-
-sim1 <- function(bSex=0, bFreq=0, bSF=0, b0=1000, Vsubj=1, Vword=1, Verror=1,
-                 b0, b_ed_score_sc, b_perc_pass_sc, b_neg_emo_comp_lag_pc_sc, b_er_strategy, 
-                 Var_pid, Var_error, Var_slope_strategy, Var_slope_emo_lag, 
-                 n=101, t=70) {
-  
-	subject <- rep( 1:n, each=t )
-	timepoint <- rep(1:t, each=n )
-
-	# random effects per subject
-	# S.re <- rnorm(60, 0, sqrt(Vsubj))
-	P_re <- rnorm(n)
-	
-
-	# epsilons
-	eps <- rnorm(n*t, 0, sqrt(V_error))
-
-	# put it all together
-	ReactionTime <- b0 + bSex*(Sex=='M') + bFreq*Frequency + bSF*(Sex=='M')*Frequency +
-		S.re[Subject] + W.re[Word] + eps
-	
-	neg_emo <- b0 + b_ed_score_sc + b_er_strategy + (b_ed_score_sc*b_er_strategy) + 
-	  b_perc_pass_sc + b_neg_emo_comp_lag_pc_sc
-
-	# put into a data frame
-	mydata <- data.frame( Subject = paste('s',Subject, sep=''), 
-					Word = paste('w', Word, sep=''), Sex=Sex, Frequency=Frequency,
-					ReactionTime = ReactionTime)
-
-	# analyze looking at interaction term with LR test
-	fit1 <- lmer( ReactionTime ~ (Sex*Frequency) + (1|Subject) + (1|Word), data=mydata)
-	fit2 <- lmer( ReactionTime ~ Sex + Frequency + (1|Subject) + (1|Word), data=mydata)
-	anova(fit2,fit1)[2,7]
-}
-	
-
-
-pb <- winProgressBar(max=100) # or tkProgressBar or txtProgressbar
-
-setWinProgressBar(pb, 0)
-out1 <- replicate( 100, {setWinProgressBar(pb, getWinProgressBar(pb)+1);
-				sim1( bSex=10, bFreq=2, bSF=0.25, Vsub=4000, Vword=2500, Verror=10000)})
-hist(out1)
-mean( out1 < 0.05 )
-```
+<!-- Since this is an analysis reproduction, rather than a full replication, I will conduct a post-hoc power analysis on the fitted models. -->
 
 
 ### Sample
@@ -154,19 +98,6 @@ The data analysis conducted in the original study consisted of two model structu
 Since this is an analysis reproduction, the data will be exactly the same. I plan to run this analysis using *lme4* just as the authors did. I will also conduct the same analysis using the *brms* Bayesian Regression package in R so I can compare the credible intervals and expected values of the posterior distributions with the confidence intervals and point estimates given by the *lme4* linear mixed model framework.
 
 
-
-
-### Methods Addendum (Post Data Collection)
-
-> You can comment this section out prior to final report with data collection.
-
-#### Actual Sample
-  > Sample size, demographics, data exclusions based on rules spelled out in analysis plan
-
-#### Differences from pre-data collection methods plan
-  > Any differences from what was described as the original plan, or “none”.
-
-
 ## Results
 
 
@@ -176,7 +107,7 @@ Since this is an analysis reproduction, the data will be exactly the same. I pla
 	
 
 #### Load Relevant Libraries and Functions
-```{r}
+```{r, message=FALSE, warning=FALSE, results='hide'}
 # rm(list = ls())
 library(tidyverse)
 library(haven)
@@ -199,16 +130,6 @@ df_raw <- read_sav(here("data/Study 2_exam.sav"))
 ```
 
 
-#### Data exclusion / filtering
-```{r}
-
-df_raw_complete <- df_raw #%>%
-  # filter(!is.na(ER_reapp))
-  
-
-```
-
-
 #### Prepare data for analysis - create columns etc.
 
 ##### Column names of each emotion valence category
@@ -222,12 +143,16 @@ er_strategy_cols <- c("ER_acceptance", "ER_rumination", "ER_reapp",
 
 ##### Data munging
 
-Here I am creating useful columns. Most of these are either grand-mean scaled (varname_sc) or centered (varname_c), person-scaled (varname_psc), or lagged (varname_lag).
+Exclude all emotion reports from prior to the release of exam results
 ```{r}
-df_raw_post_exam <- df_raw_complete %>%
+df_raw_post_exam <- df_raw %>%
   # ---- Keep only reports after exam results were received ---- #
   filter(exam_beepnum >= 0)
+```
 
+
+Here I am creating useful columns. Most of these are either grand-mean scaled (varname_sc), grand-mean centered (varname_c), person-mean scaled (varname_psc), or lagged (varname_lag).
+```{r}
 df_clean <- df_raw_post_exam  %>% 
   # ---- Create pos/neg emotion intensity composite scores ---- #
   mutate(
@@ -236,32 +161,33 @@ df_clean <- df_raw_post_exam  %>%
     perc_pass = perc_pass*100
   ) %>% 
   # ---- Create person level mean negative emotion score (covariate in models) ---- # 
-  group_by(Participant) %>% mutate(person_neg_emo_mean = mean(neg_emo_comp, na.rm = T)) %>% ungroup %>% 
+  group_by(Participant) %>% 
+  mutate(person_neg_emo_mean = mean(neg_emo_comp, na.rm = T)) %>% 
+  ungroup %>% 
   # ---- Create lagged emotion and strategy vars ---- #
   group_by(Participant, beepday) %>% 
-  mutate_at(vars(matches("emo|^ER_")), list(lag = ~  lag(.))) %>% 
+  mutate_at(vars(matches("emo|^ER_")), 
+            list(lag = ~  lag(.))) %>% 
   ungroup %>% 
   # ---- Person scale emotion and strategy vars ---- #
   group_by(Participant) %>% 
-  mutate_at(vars(matches("emo|^ER_"), -matches("_sc$|_c$|_psc$|_pc$")), list(pc = ~scale(., T, F))) %>% 
-  mutate_at(vars(matches("emo|^ER_"), -matches("_sc$|_c$|_psc$|_pc$")), list(psc = ~scale(.))) %>% 
+  mutate_at(vars(matches("emo|^ER_"), -matches("_sc$|_c$|_psc$|_pc$")), 
+            list(pc = ~scale(., T, F))) %>% 
+  mutate_at(vars(matches("emo|^ER_"), -matches("_sc$|_c$|_psc$|_pc$")), 
+            list(psc = ~scale(.))) %>% 
   ungroup %>% 
   # ---- Create grand mean centered emotion and strategy vars ---- #
-  mutate_at(vars(matches("emo|^ER_|^perc_pass$"), 
-                 -matches("_sc$|_c$")), 
+  mutate_at(vars(matches("emo|^ER_|^perc_pass$"), -matches("_sc$|_c$")), 
             list(c = ~scale(., center=T, scale=F))) %>%
   # ---- Create grand mean scaled emotion and strategy vars ---- #
-  mutate_at(vars(matches("emo|^ER_|^perc_pass$"), 
-                 -matches("_sc$|_c$")), 
-            list(sc = ~scale(.))) #%>%
+  mutate_at(vars(matches("emo|^ER_|^perc_pass$"), -matches("_sc$|_c$")), 
+            list(sc = ~scale(.)))
   
-  
-  # mutate_at(vars(matches("emo|^ER_")), ~ifelse(all(is.na(.)), 0, .))
 ```
 
 
 
-##### Function to calculate ICC stats in row form
+##### Function to calculate ICC stats in dataframe row form
 ```{r}
 compute_icc <- function(dat) {
   dat %>%
@@ -311,11 +237,11 @@ df <- icc_df %>%
 
 ```
 
+##### Exclude incomplete cases
+Since the smartphone app requires the user to fill out all responses to continue, any incomplete regulation strategy indicates an incomplete response.
 ```{r}
-
 df <- df %>%
   filter(!is.na(ER_reapp))
-  
 ```
 
 
@@ -373,6 +299,25 @@ df %>%
   
 ```
 
+##### What does the variance across individuals look like?
+Each participant's mean is plotted with a black point and 95% CI overlaying the raw data in color. The mean of participant means is represented with a dotted line.
+```{r}
+mean_neg_emo <- df %>% 
+  group_by(Participant) %>% 
+  summarize(mean = mean(neg_emo_comp, na.rm = T)) %>% 
+  summarize(mean = mean(mean)) %>% 
+  unlist
+
+
+df %>% 
+  ggplot(aes(x = factor(Participant), y = neg_emo_comp, color = factor(Participant))) +
+  geom_point(position = position_jitter(0), alpha = .4, size = .6) +
+  stat_summary(fun.data = "mean_cl_boot", size = .2, color = "black") +
+  geom_hline(yintercept = mean_neg_emo, linetype = "dotted") +
+  theme(legend.position = "none", axis.text.x=element_blank()) +
+  labs(x = "Participant", y = "Negative emotion")
+```
+
 
 ##### How were different emotions related to the percentage of exams passed?
 ```{r}
@@ -418,16 +363,6 @@ perc_pass_summary <- df %>%
             sd = sd(perc_pass, na.rm = T))
 
 df %>% 
-  # # ---- create grouping by +/- 1 SD
-  # mutate(
-  #   perc_pass_group = case_when(
-  #     perc_pass > (perc_pass_summary$mean + perc_pass_summary$sd) ~ "high",
-  #     perc_pass < (perc_pass_summary$mean - perc_pass_summary$sd) ~ "low",
-  #     perc_pass < (perc_pass_summary$mean + perc_pass_summary$sd) &
-  #       perc_pass > (perc_pass_summary$mean - perc_pass_summary$sd) ~"mid"
-  #   )
-  # ) %>% 
-  # filter(perc_pass_group == "mid") %>%
   group_by(Participant, exam_beepnum) %>% 
   summarize_at(vars(starts_with("emotion_"), 
                     -matches("_sc$|_c$|_psc$|_pc$|_lag$")), 
@@ -513,7 +448,7 @@ df %>%
 #### Visualizing regulation characteristics
 
 ##### To what degree did people use different strategies?
-Acceptance has a way outsized share of strategy usage. It is difficult to measure acceptance in this context since it can easily be misintepreted as accepting your exam scores rather than accepting negative emotions. 
+Acceptance has a way outsized share of strategy usage. It is difficult to measure acceptance in this context since it can easily be misintepreted as accepting your exam scores rather than accepting negative emotions. In a colloquial sense, one might be more accustomed to speaking about how much they accept a situation, rather than how much they accept concomitant emotional sensation of a situation. This confusion is less of a concern for other strategies where the colloquial interpretation more closely aligns with the emotion regulation construct.
 ```{r}
 df %>% 
   group_by(Participant) %>% 
@@ -592,7 +527,7 @@ df %>%
 
 ```
 
-Does ED score predict use of strategies?
+##### Does ED score predict use of strategies?
 ```{r, fig.asp=1.5}
 df %>% 
   pivot_longer(cols = er_strategy_cols, 
@@ -635,109 +570,14 @@ df %>%
 
 ```
 
-##### how does each strategy predict negative emotion with emotion differentiation moderator?
-(PLOT FROM PAPER except without using simple slopes)
-```{r}
-
-plot_df <- df %>%
-  select(Participant,
-         ed_score,
-         ed_score_class,
-         matches("ER_.*_pc_sc$"),
-         -matches("_c$|_psc$|_lag|_pc$"),
-         neg_emo_comp) %>%
-  pivot_longer(cols = c(-Participant, -neg_emo_comp, -ed_score, -ed_score_class),
-               names_to = "strategy_type",
-               values_to = "strategy_rating") %>%
-  mutate(
-    ed_score = scale(ed_score, T, F),
-    strategy_type = str_replace_all(strategy_type, "ER_", ""),
-    strategy_type = reorder(strategy_type, strategy_rating, mean)) %>% 
-  mutate(strategy_type=recode(strategy_type,
-    "rumination_pc_sc" = "Rumination",
-    "reapp_pc_sc" = "Reappraisal",
-    "soc_sharing_pc_sc" = "Social sharing",
-    "acceptance_pc_sc" = "Acceptance",
-    "distraction_pc_sc" = "Distraction",
-    "supp_pc_sc" = "Suppression"
-  ))
-
-
-plot_df %>%
-  ggplot(aes(x = strategy_rating, y = neg_emo_comp, color = ed_score)) +
-  geom_jitter(alpha = .3, size = .2) +
-  geom_smooth(data=plot_df[!is.na(plot_df$ed_score_class),],
-              aes(linetype = ed_score_class),
-              method = "lm",
-              se=F, color="black", size = .3) +
-  facet_wrap(~strategy_type) +
-  scale_x_continuous(breaks = seq(floor(min(plot_df$strategy_rating)), ceiling(max(plot_df$strategy_rating)), 2)) +
-  scale_colour_gradient2(low = "red", mid = "lightcyan", high = "blue") +
-  labs(x = "Strategy usage",
-       y = "Negative emotion intensity", 
-       color = "Emotion differentiation",
-       linetype = "")
-
-  
-```
-
-##### how does each strategy predict negative emotion with emotion differentiation moderator?
-(PLOT FROM PAPER)
-```{r}
-
-
-plot_df <- df %>%
-  select(Participant,
-         ed_score,
-         ed_score_class,
-         matches("ER_.*_pc_sc$"),
-         -matches("_c$|_psc$|_lag|_pc$"),
-         neg_emo_comp) %>%
-  pivot_longer(cols = c(-Participant, -neg_emo_comp, -ed_score, -ed_score_class),
-               names_to = "strategy_type",
-               values_to = "strategy_rating") %>%
-  mutate(
-    ed_score = scale(ed_score, T, F),
-    strategy_type = str_replace_all(strategy_type, "ER_", ""),
-    strategy_type = reorder(strategy_type, strategy_rating, mean)) %>% 
-  mutate(strategy_type=recode(strategy_type,
-    "rumination_pc_sc" = "Rumination",
-    "reapp_pc_sc" = "Reappraisal",
-    "soc_sharing_pc_sc" = "Social sharing",
-    "acceptance_pc_sc" = "Acceptance",
-    "distraction_pc_sc" = "Distraction",
-    "supp_pc_sc" = "Suppression"
-  )) %>% 
-  filter(strategy_type %in% c("Rumination","Distraction","Acceptance","Social sharing"))
-
-
-plot_df %>%
-  ggplot(aes(x = strategy_rating, y = neg_emo_comp, color = ed_score)) +
-  geom_jitter(alpha = .3, size = .2) +
-  geom_smooth(data=plot_df[!is.na(plot_df$ed_score_class),],
-              aes(linetype = ed_score_class),
-              method = "lm",
-              se=F, color="black", size = .3) +
-  facet_wrap(~strategy_type) +
-  scale_x_continuous(breaks = seq(floor(min(plot_df$strategy_rating)), ceiling(max(plot_df$strategy_rating)), 2)) +
-  scale_colour_gradient2(low = "red", mid = "lightcyan", high = "blue") +
-  labs(x = "Strategy usage",
-       y = "Negative emotion intensity", 
-       color = "Emotion differentiation",
-       linetype = "")
-
-  
-```
-
-
 
 ### Confirmatory analysis
 
 > The analyses as specified in the analysis plan.  
 
-*Side-by-side graph with original graph is ideal here*
+##### helper functions
 
-##### function for formatting output table
+Function for formatting output table
 ```{r}
 
 table_out <- function(result_df){
@@ -769,20 +609,19 @@ table_out <- function(result_df){
 
 ```
 
-##### Start the modeling ...
-
-###### Helper function to format output of model building functions
-Creates a dataframe of model parameters and a label for which strategy is being tested
+Function to format output of model building functions
+Creates a dataframe of model estimates and a label for which strategy is being tested
 ```{r}
 format_model <- function(x){
   x[[2]] %>% 
     broom.mixed::tidy() %>%
     mutate(strategy = x[[1]],
-           strategy = str_replace(strategy, "ER_", ""),
-           strategy = str_replace(strategy, "_pc_sc", "")) %>%
+           strategy = str_replace(strategy, "ER_|_pc_sc", "")) %>%
     select(strategy, everything())
 }
 ```
+
+##### Start the modeling ...
 
 ###### Model 1: Predicting strategy selection from differentiation score
 ```{r}
@@ -792,19 +631,31 @@ build_model1 <- function(x){
          perc_pass_sc + 
          person_neg_emo_mean_sc +
          (1 | Participant), df)")
-  list(x, eval(parse(text = model_str_eval)))
+  strat <- str_replace_all(x, "_sc|ER_", "")
+  list(strat, eval(parse(text = model_str_eval)))
 }
 
 result_1 <- map(paste0(er_strategy_cols, "_sc"), build_model1)
 result_1_df <- map(result_1, format_model) %>% 
   bind_rows
 
+
+# assign models to environment variables, becomes useful when creating the figure reproduction
+map(result_1, ~assign(x = paste0(.[[1]], "_mod1"), # var name: "strategy_mod1"
+                      value = .[[2]],
+                      pos = 1)) # global environment
+```
+
+Model output
+```{r}
 result_1_df %>% sjPlot::tab_df(digits = 3)
+```
 
-
+Write results to disk
+```{r}
 result_1_out <- result_1_df %>% 
   table_out
-write_csv(result_1_out, "writeup/model1_table.csv")
+write_csv(result_1_out, here("writeup/model1_table.csv"))
 ```
 
 ###### Model 2: Predicting efficacy from interaction of strategy usage and differentiation score
@@ -814,7 +665,8 @@ build_model2 <- function(x){
   lmer(neg_emo_comp_sc ~ ed_score_sc*{x} + 
   perc_pass_sc + neg_emo_comp_lag_pc_sc +
   ({x} + neg_emo_comp_lag_pc_sc | Participant), df)")
-  list(x, eval(parse(text = model_str_eval)))
+  strat <- str_replace_all(x, "_pc|_sc|ER_", "")
+  list(strat, eval(parse(text = model_str_eval)))
 }
 
 
@@ -822,56 +674,210 @@ result_2 <- map(paste0(er_strategy_cols, "_pc_sc"), build_model2)
 result_2_df <- map(result_2, format_model) %>% 
   bind_rows
 
+# assign models to variables
+map(result_2, ~assign(x = paste0(.[[1]], "_mod2"), # var name: strategyvar_mod2
+                      value = .[[2]],
+                      pos = 1)) # global environment
+```
 
+Model output
+```{r}
 result_2_df %>% sjPlot::tab_df(digits = 3)
+```
 
+Write results to disk
+```{r}
 result_2_out <- result_2_df %>% 
   table_out
-write_csv(result_2_out, "writeup/model2_table.csv")
+write_csv(result_2_out, here("writeup/model2_table.csv"))
 ```
+
+<!-- ### Post-hoc power analysis -->
+<!-- ```{r} -->
+<!-- # (pwr_distraction_m1 <- powerSim(distraction_mod1, seed = 1234, nsim = 10)) -->
+
+<!-- V_pid <- .747^2 -->
+<!-- V_strat_pid <- 0.069^2 -->
+<!-- V_emolag_pid <- 0.077^2 -->
+<!-- V_resid <- 0.316^2 -->
+
+<!-- intcpt <- -0.003 -->
+<!-- B_ed <- -0.035 -->
+<!-- B_strat <- 0.025 -->
+<!-- B_pass <- -0.575 -->
+<!-- B_emolag <- 0.162 -->
+<!-- B_ed_x_strat <- -0.026 -->
+
+<!-- # pid_means <- rnorm() -->
+
+
+
+
+<!-- ``` -->
+
+
 
 ### Plotting the models (reproduction of manuscript figure)
 
-#### Get variance-covariance matrices needed to calculate simple slopes
+#### Get stats needed to plug into simple slopes calculator
+Use case 3 calculator at this link: [simple slopes calculator](http://www.quantpsy.org/interact/hlm2.htm).
+
+##### Variance and covariances 
+
+Acceptance
 ```{r}
-# acceptance
-vcov(result_2[[1]][[2]])
-# rumination
-vcov(result_2[[2]][[2]])
-# social sharing
-vcov(result_2[[5]][[2]])
-# distraction
-vcov(result_2[[6]][[2]])
-
-
-
+vcov(acceptance_mod2) 
+coef(acceptance_mod2)$Participant$`(Intercept)` %>% mean
+coef(acceptance_mod2)$Participant$ER_acceptance_pc_sc %>% mean
+coef(acceptance_mod2)$Participant$ed_score_sc %>% mean
+coef(acceptance_mod2)$Participant$`ed_score_sc:ER_acceptance_pc_sc` %>% mean
 ```
 
 
+Rumination
+```{r}
+vcov(rumination_mod2)
+coef(rumination_mod2)$Participant$`(Intercept)` %>% mean
+coef(rumination_mod2)$Participant$ER_rumination_pc_sc %>% mean
+coef(rumination_mod2)$Participant$ed_score_sc %>% mean
+coef(rumination_mod2)$Participant$`ed_score_sc:ER_rumination_pc_sc` %>% mean
+```
 
-<!-- #### Post-hoc power model 2 -->
-<!-- ```{r} -->
-<!-- library(simr) -->
-<!-- reap_mod2 <- lmer( -->
-<!--     neg_emo_comp_sc ~  -->
-<!--     ed_score_sc*ER_reapp_pc_sc + -->
-<!--     perc_pass_sc +  -->
-<!--     neg_emo_comp_lag_pc_sc + -->
-<!--     (ER_reapp_pc_sc + neg_emo_comp_lag_pc_sc | Participant), df)  -->
-<!-- powerSim(reap_mod2, test="perc_pass_sc", nsim=100) -->
 
-<!-- ``` -->
+Social sharing
+```{r}
+vcov(soc_sharing_mod2)
+coef(soc_sharing_mod2)$Participant$`(Intercept)` %>% mean
+coef(soc_sharing_mod2)$Participant$ER_soc_sharing_pc_sc %>% mean
+coef(soc_sharing_mod2)$Participant$ed_score_sc %>% mean
+coef(soc_sharing_mod2)$Participant$`ed_score_sc:ER_soc_sharing_pc_sc` %>% mean
+```
+
+
+Distraction
+```{r}
+vcov(distraction_mod2)
+coef(distraction_mod2)$Participant$`(Intercept)` %>% mean
+coef(distraction_mod2)$Participant$ER_distraction_pc_sc %>% mean
+coef(distraction_mod2)$Participant$ed_score_sc %>% mean
+coef(distraction_mod2)$Participant$`ed_score_sc:ER_distraction_pc_sc` %>% mean
+```
+
+##### Create a dataframe of simple slope coefficients that are unstandardized
+```{r}
+ss_coefs_df <- read_csv(here("data/simple_slopes_coefficients.csv")) %>% 
+  pivot_wider(names_from = "term", values_from = "coefficient")
+
+strat_sds <- df %>% 
+  select(which(names(df) %in% ss_coefs_df$strategy)) %>%
+  pivot_longer(cols = everything(), names_to = "strategy", values_to = "value") %>% 
+  group_by(strategy) %>% 
+  summarize(strat_sd = sd(value)) %>% 
+  ungroup
+
+neg_emo_sd <- sd(df$neg_emo_comp)
+neg_emo_mean <- mean(df$neg_emo_comp)
+
+
+
+# unstandardize the coefficients and create separate columns for different line segments
+ss_coefs_df_unstd <- ss_coefs_df %>% 
+  left_join(strat_sds) %>% 
+  mutate(slope_unstd = slope * (neg_emo_sd/strat_sd),
+         intercept_unstd = neg_emo_mean + (intercept * neg_emo_sd)) %>% 
+  mutate(strategy_type=recode(strategy,
+    "ER_rumination_pc" = "Rumination",
+    "ER_soc_sharing_pc" = "Social sharing",
+    "ER_acceptance_pc" = "Acceptance",
+    "ER_distraction_pc" = "Distraction",
+  )) %>% 
+  mutate(strategy_type = fct_relevel(strategy_type,
+                                     "Rumination","Distraction","Acceptance","Social sharing"),
+         sd_group = dplyr::recode(sd_group,
+                                  "hi" = "High ED (+1 SD)",
+                                  "lo" = "Low ED (-1 SD)"),
+         sd_group = fct_relevel(sd_group, "Low ED (-1 SD)"))
+```
+
+
+##### how does each strategy predict negative emotion with emotion differentiation moderator? (Figure 2 from manuscript)
+```{r}
+plot_df <- df %>%
+  select(Participant,
+         ed_score,
+         ed_score_class,
+         matches("ER_.*_pc_sc$"),
+         -matches("_c$|_psc$|_lag|_pc$"),
+         neg_emo_comp) %>%
+  pivot_longer(cols = c(-Participant, -neg_emo_comp, -ed_score, -ed_score_class),
+               names_to = "strategy_type",
+               values_to = "strategy_rating") %>%
+  mutate(
+    ed_score = scale(ed_score, T, F),
+    strategy_type = str_replace_all(strategy_type, "ER_", ""),
+    strategy_type = reorder(strategy_type, strategy_rating, mean)) %>% 
+  mutate(
+    strategy_type = dplyr::recode(
+      strategy_type,
+      "rumination_pc_sc" = "Rumination",
+      "reapp_pc_sc" = "Reappraisal",
+      "soc_sharing_pc_sc" = "Social sharing",
+      "acceptance_pc_sc" = "Acceptance",
+      "distraction_pc_sc" = "Distraction",
+      "supp_pc_sc" = "Suppression")
+  ) %>% 
+  mutate(strategy_type = fct_relevel(strategy_type,
+                                     "Rumination","Distraction","Acceptance","Social sharing")) %>% 
+  filter(strategy_type %in% c("Rumination","Distraction","Acceptance","Social sharing")) 
+
+
+plot_df  %>% 
+  ggplot(aes(x = strategy_rating, y = neg_emo_comp)) +
+  # individual data points
+  geom_jitter(aes(color = ed_score), alpha = .5, size = .2) +
+  # line segments with 3 standard deviations on x axis
+  geom_segment(aes(
+    x =    0 - (strat_sd*3),
+    xend = 0 + (strat_sd*3),
+    y =    intercept_unstd + (slope_unstd * (0 - (strat_sd * 3))),
+    yend = intercept_unstd + (slope_unstd * (0 + (strat_sd * 3))),
+    linetype = sd_group
+    ), data = ss_coefs_df_unstd) +
+  # line segments between 3-6 standard devs on x axis
+  geom_segment(aes(
+    x =    0 - (strat_sd*6),
+    xend = 0 + (strat_sd*6),
+    y =    intercept_unstd + (slope_unstd * (0 - (strat_sd * 6))),
+    yend = intercept_unstd + (slope_unstd * (0 + (strat_sd * 6)))
+    ), linetype = "dotted", data = ss_coefs_df_unstd) +
+  # formatting
+  facet_wrap(~strategy_type) +
+  coord_cartesian(xlim = c(-5, 5)) +
+  scale_x_continuous(breaks = seq(-5,5,1)) +
+  scale_colour_gradient2(low = "red", mid = "lightcyan", high = "blue") +
+  labs(x = "Strategy usage",
+       y = "Negative emotion intensity", 
+       color = "Emotion differentiation",
+       linetype = "") + 
+  theme(panel.spacing = unit(.1, "lines"))
+
+
+  
+```
+
+##### Original Figure 2
+![Kalokerinos figure 2](`r here::here("writeup/figure2.png")`)
+*Side-by-side graph with original graph is ideal here*
 
 ### Exploratory analyses
 
 > Any follow-up analyses desired (not required).
 
-```{r}
-normalize <- function(x){
-  (x - min(x, na.rm=T))/(max(x, na.rm = T)-min(x, na.rm=T))
-}
-```
+#### Looking at relationship temporal relations between negative emotion and reappraisal
+It's important to note here that the question asking about reappraisal is *retrospective*, (since last EMA ping), and the question asking about emotion intensity is current. Thus, reappraisal and negative emotion measured in the same survey are referring to reappraisal at time t-1 and emotion at time t. As a result, when we look at the effect of reappraisal on subsequent emotion, we do not need to use any lagged measurements. When we look at the effect of emotion on subsequent reappraisal usage, we need to use a lagged emotion measurement.
 
+#### Create a simpler dataframe for modeling temporal relationships
+Here I am making a simpler dataframe for modeling temporal relationships. I am also limiting this to only measurements taken on the day the test result was received. 
 ```{r}
 
 df_mod_long <- df %>%
@@ -879,78 +885,83 @@ df_mod_long <- df %>%
          t_num = as.numeric(t)) %>% 
   filter(t <= 10) %>%
   select(Participant, t, t_num, perc_pass,
-         # ER_reapp,
-         # ER_distraction,,
-         ER_rumination,
-         neg_emo_comp) %>%
+         ER_reapp_sc, ER_reapp_lag_sc,
+         neg_emo_comp_sc, neg_emo_comp_lag_sc) %>%
   mutate(t = paste0("t", t),
-         neg_emo_comp = scale(neg_emo_comp),
-         # ERa = scale(ER_reapp),
-         # ERa = scale(ER_distraction),
-         ERa = scale(ER_rumination),
-         perc_pass = scale(perc_pass)) %>%
-  rename("neg" = "neg_emo_comp") 
+         # perc_pass = scale(perc_pass),
+         ) %>%
+  rename("neg" = "neg_emo_comp_sc",
+         "neg_lag" = "neg_emo_comp_lag_sc",
+         "reap" = "ER_reapp_sc",
+         "reap_lag" = "ER_reapp_lag_sc") 
 
 df_mod <- df_mod_long %>% 
   pivot_wider(id_cols = c("Participant", "perc_pass"),
-              names_from = "t", values_from = c("neg", "ERa"))
+              names_from = "t", values_from = c("neg", "neg_lag", "reap", "reap_lag"))
 ```
 
+
+
+#### Plotting the temporal relationships between negative emotion and reappraisal broken down by time point
+If we look at the relation between lagged neg emotion and ER and vice versa, it goes in the opposite direction at t1 and t2, but then stays in the expected direction after that. I will experiment with removing these time points from the modeling later on. It is also super interesting that the relationship between reappraisal and subsequent negative emotion seems to increase as time goes on. This is super puzzling. At first glance, it is counterintuitive that there should be a positive relationship at all between use of reappraisal and subsequent emotion since you would expect reappraisal to dampen negative emotion. It's hard to make anything of this since we are not controlling for prior negative emotion here. If someone has a greater degree of emotion at time t-1 they will likely use reappraisal more, but also have higher emotion at time t.
 ```{r}
 df_mod_long %>% 
-  ggplot(aes(x = t_num, y = neg)) + 
-  geom_jitter(alpha = .4) +
-  geom_smooth(aes(group = Participant), method="gam", se = F, size = .2) +
-  geom_smooth(aes(group = 1), method="gam", color = "red")
+  ggplot(aes(y = reap, x = neg_lag)) + 
+  geom_point(position = position_jitter(.2), alpha = .4) +
+  geom_smooth(aes(color = t), method="gam", se = F, size = .9) 
 
 df_mod_long %>% 
-  ggplot(aes(x = ERa, y = neg)) + 
-  geom_jitter(alpha = .4) +
-  geom_smooth(aes(group = Participant), method="gam", se = F, size = .2) +
-  geom_smooth(aes(group = 1), method="gam", color = "red")
-
-df_mod_long %>% 
-  ggplot(aes(y = ERa, x = lag(neg))) + 
-  geom_jitter(alpha = .4) +
-  geom_smooth(aes(group = Participant), method="gam", se = F, size = .2) +
-  geom_smooth(aes(group = 1), method="gam", color = "red")
-
-# if we look at the relation between lagged neg emotion and ER it seems weird at t1 and t2 but then stays stable in the expected direction after that. I will try removing these time points from the model
-df_mod_long %>% 
-  ggplot(aes(y = ERa, x = lag(neg))) + 
-  geom_jitter(alpha = .4) +
-  geom_smooth(aes(color = t), method="gam", se = F, size = .9) #+
-  # geom_smooth(aes(group = 1), method="gam", color = "red")
-
-df_mod_long %>% 
-  lmer(neg ~ ERa + lag(neg) + (1|Participant), .) %>% 
-  summary
-df_mod_long %>% 
-  lmer(ERa ~ lag(neg) + lag(ERa) + (1|Participant), .) %>% 
-  summary
+  ggplot(aes(x = reap, y = neg)) + 
+  geom_point(position = position_jitter(.2), alpha = .4) +
+  geom_smooth(aes(color = t), method="gam", se = F, size = .9) 
 
 ```
 
+Here we are exploring the relationship between reappraisal and subsequent negative emotion. When controlling for prior negative emotion, there does not appear to be any relationship at all. This could indicate that in the first day after receiving their result, reappraisal may be inaccessible. I should check if this result holds for distraction which is known to be more accessible in times of high intensity negative emotion. There is very strong autocorrelation in the negative emotion.
 ```{r}
-# df_mod <- df_mod %>% 
-#   select(-contains("t1"), -contains("t2"))
+fit_neg <- lmer(neg ~ reap + neg_lag + (1|Participant), df_mod_long)
+coef_neg <- coef(fit_neg)
+
+df_mod_long %>% 
+  ggplot(aes(x = reap, y = neg)) + 
+  geom_jitter(width = .1, alpha = .2) +
+  geom_abline(intercept = coef_neg$Participant$`(Intercept)`,
+              slope = coef_neg$Participant$reap, size = .2)
+summary(fit_neg)
 ```
+
+Here we see a positive relationship between negative emotion and subsequent reappraisal usage as expected.
+```{r}
+fit_er <- lmer(reap ~ neg_lag + reap_lag + (1|Participant), df_mod_long)
+coef_er <- coef(fit_er)
+df_mod_long %>% 
+  ggplot(aes(y = reap, x = neg_lag)) + 
+  geom_jitter(width = .1, alpha = .2) +
+  geom_abline(intercept = coef_er$Participant$`(Intercept)`,
+              slope = coef_er$Participant$`neg_lag`, size = .2) +
+  geom_abline(intercept = mean(coef_er$Participant$`(Intercept)`),
+              slope = mean(coef_er$Participant$`neg_lag`), 
+              color = "red")
+summary(fit_er)
+
+
+
+```
+
 
 ```{r}
 riclpmModel_not1t2 <- 
 '
-#Note, the data contain x1-3 and y1-3
-#Latent mean Structure with intercepts
 
 neg_lt =~ 1*neg_t3 + 1*neg_t4 + 
           1*neg_t5 + 1*neg_t6 + 
           1*neg_t7 + 1*neg_t8 + 
           1*neg_t9 + 1*neg_t10
           
-ERa_lt =~ 1*ERa_t3 + 1*ERa_t4 + 
-          1*ERa_t5 + 1*ERa_t6+ 
-          1*ERa_t7 + 1*ERa_t8 + 
-          1*ERa_t9 + 1*ERa_t10
+reap_lt =~ 1*reap_t3 + 1*reap_t4 + 
+          1*reap_t5 + 1*reap_t6+ 
+          1*reap_t7 + 1*reap_t8 + 
+          1*reap_t9 + 1*reap_t10
           
 #intercepts
 neg_t3 ~ mu3 *1
@@ -962,18 +973,18 @@ neg_t8 ~ mu8 *1
 neg_t9 ~ mu9 *1
 neg_t10 ~ mu10*10
 
-ERa_t3 ~ pi3 *1
-ERa_t4 ~ pi4 *1
-ERa_t5 ~ pi5 *1
-ERa_t6 ~ pi6 *1
-ERa_t7 ~ pi7 *1
-ERa_t8 ~ pi8 *1
-ERa_t9 ~ pi9 *1
-ERa_t10~ pi10*1
+reap_t3 ~ pi3 *1
+reap_t4 ~ pi4 *1
+reap_t5 ~ pi5 *1
+reap_t6 ~ pi6 *1
+reap_t7 ~ pi7 *1
+reap_t8 ~ pi8 *1
+reap_t9 ~ pi9 *1
+reap_t10~ pi10*1
 
 neg_lt ~~ neg_lt #variance
-ERa_lt ~~ ERa_lt #variance
-neg_lt ~~ ERa_lt #covariance
+reap_lt ~~ reap_lt #variance
+neg_lt ~~ reap_lt #covariance
 
 # latent vars for AR and cross-lagged effects
 # each factor loading set to 1
@@ -986,32 +997,32 @@ neg_lt8 =~ 1*neg_t8
 neg_lt9 =~ 1*neg_t9 
 neg_lt10=~ 1*neg_t10
 
-ERa_lt3 =~ 1*ERa_t3 
-ERa_lt4 =~ 1*ERa_t4 
-ERa_lt5 =~ 1*ERa_t5 
-ERa_lt6 =~ 1*ERa_t6 
-ERa_lt7 =~ 1*ERa_t7 
-ERa_lt8 =~ 1*ERa_t8 
-ERa_lt9 =~ 1*ERa_t9 
-ERa_lt10=~ 1*ERa_t10
+reap_lt3 =~ 1*reap_t3 
+reap_lt4 =~ 1*reap_t4 
+reap_lt5 =~ 1*reap_t5 
+reap_lt6 =~ 1*reap_t6 
+reap_lt7 =~ 1*reap_t7 
+reap_lt8 =~ 1*reap_t8 
+reap_lt9 =~ 1*reap_t9 
+reap_lt10=~ 1*reap_t10
 
 
 # regressions
-neg_lt10 ~ alpha*neg_lt9 + beta*ERa_lt10
-neg_lt9  ~ alpha*neg_lt8 + beta*ERa_lt9
-neg_lt8  ~ alpha*neg_lt7 + beta*ERa_lt8
-neg_lt7  ~ alpha*neg_lt6 + beta*ERa_lt7
-neg_lt6  ~ alpha*neg_lt5 + beta*ERa_lt6
-neg_lt5  ~ alpha*neg_lt4 + beta*ERa_lt5
-neg_lt4  ~ alpha*neg_lt3 + beta*ERa_lt4
+neg_lt10 ~ alpha*neg_lt9 + beta*reap_lt10
+neg_lt9  ~ alpha*neg_lt8 + beta*reap_lt9
+neg_lt8  ~ alpha*neg_lt7 + beta*reap_lt8
+neg_lt7  ~ alpha*neg_lt6 + beta*reap_lt7
+neg_lt6  ~ alpha*neg_lt5 + beta*reap_lt6
+neg_lt5  ~ alpha*neg_lt4 + beta*reap_lt5
+neg_lt4  ~ alpha*neg_lt3 + beta*reap_lt4
 
-ERa_lt10 ~ delta*ERa_lt9 + gamma*neg_lt9
-ERa_lt9  ~ delta*ERa_lt8 + gamma*neg_lt8
-ERa_lt8  ~ delta*ERa_lt7 + gamma*neg_lt7
-ERa_lt7  ~ delta*ERa_lt6 + gamma*neg_lt6
-ERa_lt6  ~ delta*ERa_lt5 + gamma*neg_lt5
-ERa_lt5  ~ delta*ERa_lt4 + gamma*neg_lt4
-ERa_lt4  ~ delta*ERa_lt3 + gamma*neg_lt3
+reap_lt10 ~ delta*reap_lt9 + gamma*neg_lt9
+reap_lt9  ~ delta*reap_lt8 + gamma*neg_lt8
+reap_lt8  ~ delta*reap_lt7 + gamma*neg_lt7
+reap_lt7  ~ delta*reap_lt6 + gamma*neg_lt6
+reap_lt6  ~ delta*reap_lt5 + gamma*neg_lt5
+reap_lt5  ~ delta*reap_lt4 + gamma*neg_lt4
+reap_lt4  ~ delta*reap_lt3 + gamma*neg_lt3
 
 neg_lt ~ perc_pass
 
@@ -1025,28 +1036,28 @@ neg_lt8 ~~ u8 *neg_lt8
 neg_lt9 ~~ u9 *neg_lt9 
 neg_lt10~~ u10*neg_lt10
 
-ERa_lt3 ~~ ERa_lt3
-ERa_lt4 ~~ v4 *ERa_lt4 
-ERa_lt5 ~~ v5 *ERa_lt5 
-ERa_lt6 ~~ v6 *ERa_lt6 
-ERa_lt7 ~~ v7 *ERa_lt7 
-ERa_lt8 ~~ v8 *ERa_lt8 
-ERa_lt9 ~~ v9 *ERa_lt9 
-ERa_lt10~~ v10*ERa_lt10
+reap_lt3 ~~ reap_lt3
+reap_lt4 ~~ v4 *reap_lt4 
+reap_lt5 ~~ v5 *reap_lt5 
+reap_lt6 ~~ v6 *reap_lt6 
+reap_lt7 ~~ v7 *reap_lt7 
+reap_lt8 ~~ v8 *reap_lt8 
+reap_lt9 ~~ v9 *reap_lt9 
+reap_lt10~~ v10*reap_lt10
 
 # covariance
-neg_lt3 ~~ ERa_lt3 
-neg_lt4 ~~ ERa_lt4  
-neg_lt5 ~~ ERa_lt5  
-neg_lt6 ~~ ERa_lt6  
-neg_lt7 ~~ ERa_lt7  
-neg_lt8 ~~ ERa_lt8  
-neg_lt9 ~~ ERa_lt9  
-neg_lt10 ~~ ERa_lt10 
+# neg_lt3 ~~ reap_lt3 
+# neg_lt4 ~~ reap_lt4  
+# neg_lt5 ~~ reap_lt5  
+# neg_lt6 ~~ reap_lt6  
+# neg_lt7 ~~ reap_lt7  
+# neg_lt8 ~~ reap_lt8  
+# neg_lt9 ~~ reap_lt9  
+# neg_lt10 ~~ reap_lt10 
 '
 
 fit <- lavaan(riclpmModel_not1t2, data = df_mod,
-              missing = 'ML', #for the missing data!
+              missing = 'ML', #for the missing data
               int.ov.free = F,
               int.lv.free = F,
               auto.fix.first = F,
@@ -1057,57 +1068,6 @@ fit <- lavaan(riclpmModel_not1t2, data = df_mod,
 summary(fit, standardized = T)
 fitMeasures(fit)
 
-```
-
-```{r}
-#get the model-expected means
-means <- fitted(fit)$mean
-meansDF <- data.frame(mean = means, key = names(means)) %>%
-  extract(col = key, into = c('var', 't'), regex = '(\\w)(\\d)')
-
-df_mod_long2 <- df_mod %>% 
-  pivot_longer(cols = c(-Participant, -perc_pass),
-               names_to = "var", values_to = "value") %>% 
-  separate(var, c("var", "t")) %>% 
-  # pivot_wider(names_from = "var", values_from = "value") %>% 
-  mutate(pid = 1:n()) #%>%
-  # select(-Participant)
-
-#plot the model-expected random intercepts
-predict(fit) %>%
-  as.data.frame %>%
-  # mutate(pid = 1:n()) %>%
-  mutate(Participant = df_mod$Participant)
-  gather(key, latentvalue, -pid, -neg_lt, -ERa_lt) %>%
-  extract(col = key, into = c('latentvar', 't'), regex = '(\\w)(\\d)') %>%
-  mutate(var = c(p = 'neg_lt', q = 'ERa_lt')[latentvar]) %>%
-  left_join(meansDF) %>% #those means from above
-  left_join(df_mod_long2, by = c('pid', 't', 'var')) %>% #the raw data
-  mutate(expectedLine = ifelse(var == 'x', kappa, omega) + mean,
-         wave = as.numeric(t)) %>%
-  rowwise() %>%
-  ggplot(aes(x = wave, y = expectedLine, color = var, group = var)) +
-  geom_point(aes(x = wave, y = value, 
-                 group = interaction(var, Participant)), alpha = .1, position = position_jitter(w = .2, h = 0)) +
-  geom_line(aes(y = expectedLine, 
-                group = interaction(var, Participant)), 
-            stat = 'identity', alpha = .1) + 
-  geom_line(aes(y = mean), stat = 'identity', alpha = 1, size = 1, color = 'black') + 
-  facet_wrap(~var, ncol = 2) + 
-  theme_classic()
-```
-```{r}
-library(GGally)
-predict(fit) %>%
-  as.data.frame %>%
-  select(-neg_lt, -ERa_lt) %>%
-  ggpairs(lower = list(continuous = wrap(ggally_smooth, alpha = .5))) + 
-  theme_classic()
-
-df_mod %>% 
-  # select(-x4, -y4) %>%
-  ggpairs(lower = list(continuous = wrap(ggally_smooth, alpha = .5))) + 
-  theme_classic()
 
 ```
 
@@ -1116,8 +1076,6 @@ df_mod %>%
 ```{r}
 riclpmModel <- 
 '
-#Note, the data contain x1-3 and y1-3
-#Latent mean Structure with intercepts
 
 neg_lt =~ 1*neg_t1 + 1*neg_t2 + 
           1*neg_t3 + 1*neg_t4 + 
@@ -1125,11 +1083,11 @@ neg_lt =~ 1*neg_t1 + 1*neg_t2 +
           1*neg_t7 + 1*neg_t8 + 
           1*neg_t9 + 1*neg_t10
           
-ERa_lt =~ 1*ERa_t1 + 1*ERa_t2 + 
-          1*ERa_t3 + 1*ERa_t4 + 
-          1*ERa_t5 + 1*ERa_t6+ 
-          1*ERa_t7 + 1*ERa_t8 + 
-          1*ERa_t9 + 1*ERa_t10
+reap_lt =~ 1*reap_t1 + 1*reap_t2 + 
+          1*reap_t3 + 1*reap_t4 + 
+          1*reap_t5 + 1*reap_t6+ 
+          1*reap_t7 + 1*reap_t8 + 
+          1*reap_t9 + 1*reap_t10
           
 #intercepts
 neg_t1 ~ mu1 *1 
@@ -1143,20 +1101,20 @@ neg_t8 ~ mu8 *1
 neg_t9 ~ mu9 *1
 neg_t10 ~ mu3*10
 
-ERa_t1 ~ pi1 *1
-ERa_t2 ~ pi2 *1
-ERa_t3 ~ pi3 *1
-ERa_t4 ~ pi4 *1
-ERa_t5 ~ pi5 *1
-ERa_t6 ~ pi6 *1
-ERa_t7 ~ pi7 *1
-ERa_t8 ~ pi8 *1
-ERa_t9 ~ pi9 *1
-ERa_t10~ pi10*1
+reap_t1 ~ pi1 *1
+reap_t2 ~ pi2 *1
+reap_t3 ~ pi3 *1
+reap_t4 ~ pi4 *1
+reap_t5 ~ pi5 *1
+reap_t6 ~ pi6 *1
+reap_t7 ~ pi7 *1
+reap_t8 ~ pi8 *1
+reap_t9 ~ pi9 *1
+reap_t10~ pi10*1
 
 neg_lt ~~ neg_lt #variance
-ERa_lt ~~ ERa_lt #variance
-neg_lt ~~ ERa_lt #covariance
+reap_lt ~~ reap_lt #variance
+neg_lt ~~ reap_lt #covariance
 
 # latent vars for AR and cross-lagged effects
 # each factor loading set to 1
@@ -1171,38 +1129,38 @@ neg_lt8 =~ 1*neg_t8
 neg_lt9 =~ 1*neg_t9 
 neg_lt10=~ 1*neg_t10
 
-ERa_lt1 =~ 1*ERa_t1 
-ERa_lt2 =~ 1*ERa_t2 
-ERa_lt3 =~ 1*ERa_t3 
-ERa_lt4 =~ 1*ERa_t4 
-ERa_lt5 =~ 1*ERa_t5 
-ERa_lt6 =~ 1*ERa_t6 
-ERa_lt7 =~ 1*ERa_t7 
-ERa_lt8 =~ 1*ERa_t8 
-ERa_lt9 =~ 1*ERa_t9 
-ERa_lt10=~ 1*ERa_t10
+reap_lt1 =~ 1*reap_t1 
+reap_lt2 =~ 1*reap_t2 
+reap_lt3 =~ 1*reap_t3 
+reap_lt4 =~ 1*reap_t4 
+reap_lt5 =~ 1*reap_t5 
+reap_lt6 =~ 1*reap_t6 
+reap_lt7 =~ 1*reap_t7 
+reap_lt8 =~ 1*reap_t8 
+reap_lt9 =~ 1*reap_t9 
+reap_lt10=~ 1*reap_t10
 
 
 # regressions
-neg_lt10 ~ alpha*neg_lt9 + beta*ERa_lt10
-neg_lt9  ~ alpha*neg_lt8 + beta*ERa_lt9
-neg_lt8  ~ alpha*neg_lt7 + beta*ERa_lt8
-neg_lt7  ~ alpha*neg_lt6 + beta*ERa_lt7
-neg_lt6  ~ alpha*neg_lt5 + beta*ERa_lt6
-neg_lt5  ~ alpha*neg_lt4 + beta*ERa_lt5
-neg_lt4  ~ alpha*neg_lt3 + beta*ERa_lt4
-neg_lt3  ~ alpha*neg_lt2 + beta*ERa_lt3
-neg_lt2  ~ alpha*neg_lt1 + beta*ERa_lt2
+neg_lt10 ~ alpha*neg_lt9 + beta*reap_lt10
+neg_lt9  ~ alpha*neg_lt8 + beta*reap_lt9
+neg_lt8  ~ alpha*neg_lt7 + beta*reap_lt8
+neg_lt7  ~ alpha*neg_lt6 + beta*reap_lt7
+neg_lt6  ~ alpha*neg_lt5 + beta*reap_lt6
+neg_lt5  ~ alpha*neg_lt4 + beta*reap_lt5
+neg_lt4  ~ alpha*neg_lt3 + beta*reap_lt4
+neg_lt3  ~ alpha*neg_lt2 + beta*reap_lt3
+neg_lt2  ~ alpha*neg_lt1 + beta*reap_lt2
 
-ERa_lt10 ~ delta*ERa_lt9 + gamma*neg_lt9
-ERa_lt9  ~ delta*ERa_lt8 + gamma*neg_lt8
-ERa_lt8  ~ delta*ERa_lt7 + gamma*neg_lt7
-ERa_lt7  ~ delta*ERa_lt6 + gamma*neg_lt6
-ERa_lt6  ~ delta*ERa_lt5 + gamma*neg_lt5
-ERa_lt5  ~ delta*ERa_lt4 + gamma*neg_lt4
-ERa_lt4  ~ delta*ERa_lt3 + gamma*neg_lt3
-ERa_lt3  ~ delta*ERa_lt2 + gamma*neg_lt2
-ERa_lt2  ~ delta*ERa_lt1 + gamma*neg_lt1
+reap_lt10 ~ delta*reap_lt9 + gamma*neg_lt9
+reap_lt9  ~ delta*reap_lt8 + gamma*neg_lt8
+reap_lt8  ~ delta*reap_lt7 + gamma*neg_lt7
+reap_lt7  ~ delta*reap_lt6 + gamma*neg_lt6
+reap_lt6  ~ delta*reap_lt5 + gamma*neg_lt5
+reap_lt5  ~ delta*reap_lt4 + gamma*neg_lt4
+reap_lt4  ~ delta*reap_lt3 + gamma*neg_lt3
+reap_lt3  ~ delta*reap_lt2 + gamma*neg_lt2
+reap_lt2  ~ delta*reap_lt1 + gamma*neg_lt1
 
 neg_lt ~ perc_pass
 
@@ -1218,32 +1176,32 @@ neg_lt8 ~~ u2*neg_lt8
 neg_lt9 ~~ u3*neg_lt9 
 neg_lt10~~ u2*neg_lt10
 
-ERa_lt1 ~~ ERa_lt1 
-ERa_lt2 ~~ v2*ERa_lt2
-ERa_lt3 ~~ v3*ERa_lt3
-ERa_lt4 ~~ v2*ERa_lt4 
-ERa_lt5 ~~ v3*ERa_lt5 
-ERa_lt6 ~~ v2*ERa_lt6 
-ERa_lt7 ~~ v3*ERa_lt7 
-ERa_lt8 ~~ v2*ERa_lt8 
-ERa_lt9 ~~ v3*ERa_lt9 
-ERa_lt10~~ v2*ERa_lt10
+reap_lt1 ~~ reap_lt1 
+reap_lt2 ~~ v2*reap_lt2
+reap_lt3 ~~ v3*reap_lt3
+reap_lt4 ~~ v2*reap_lt4 
+reap_lt5 ~~ v3*reap_lt5 
+reap_lt6 ~~ v2*reap_lt6 
+reap_lt7 ~~ v3*reap_lt7 
+reap_lt8 ~~ v2*reap_lt8 
+reap_lt9 ~~ v3*reap_lt9 
+reap_lt10~~ v2*reap_lt10
 
 # covariance
-neg_lt1 ~~ ERa_lt1 
-neg_lt2 ~~ ERa_lt2 
-neg_lt3 ~~ ERa_lt3 
-neg_lt4 ~~ ERa_lt4  
-neg_lt5 ~~ ERa_lt5  
-neg_lt6 ~~ ERa_lt6  
-neg_lt7 ~~ ERa_lt7  
-neg_lt8 ~~ ERa_lt8  
-neg_lt9 ~~ ERa_lt9  
-neg_lt10~~ ERa_lt10 
+# neg_lt1 ~~ reap_lt1 
+# neg_lt2 ~~ reap_lt2 
+# neg_lt3 ~~ reap_lt3 
+# neg_lt4 ~~ reap_lt4  
+# neg_lt5 ~~ reap_lt5  
+# neg_lt6 ~~ reap_lt6  
+# neg_lt7 ~~ reap_lt7  
+# neg_lt8 ~~ reap_lt8  
+# neg_lt9 ~~ reap_lt9  
+# neg_lt10~~ reap_lt10 
 '
 
 fit <- lavaan(riclpmModel, data = df_mod,
-              missing = 'ML', #for the missing data!
+              missing = 'ML', #for the missing data
               int.ov.free = F,
               int.lv.free = F,
               auto.fix.first = F,
@@ -1262,13 +1220,34 @@ fitMeasures(fit)
 
 ## Discussion
 
-### Summary of Replication Attempt
+### Summary of Reproduction Attempt
 
-> Open the discussion section with a paragraph summarizing the primary result from the confirmatory analysis and the assessment of whether it replicated, partially replicated, or failed to replicate the original result.  
+> Open the discussion section with a paragraph summarizing the primary result from the confirmatory analysis and the assessment of whether it replicated, partially replicated, or failed to replicate the original result.
+
+Overall, this reproduction attempt was successful. I was able to reproduce all of the model coefficients reported in Study 2 of the paper. However, I would not have been able to do this without referencing the analysis script provided online by the authors. The manuscript:
+> In Model 2, we used differentiation, regulation, their cross- level interaction, and percentage passed to predict negative emotion (separately for each strategy; six models). We included lagged negative emotion (at the previous time point) to model emotional change, again excluding overnight lags. We person-mean-centered regulation and lagged emotion and grand-mean-centered differentiation and percentage passed.
+
+By looking at the author's open analysis script online, I discovered that regulation and lagged emotion were not only person-mean-centered as reported, but subsequently grand-mean scaled as well. In addition, differentiation were not only grand-mean-centered, but also scaled by the standard deviation. This minor deviation (grand-mean-centered vs. grand-mean-scaled) also occurred in description of Model 1. That being said, these details do not substantively change or diminish the findings presented in the paper. 
+
 
 ### Commentary
 
 > Add open-ended commentary (if any) reflecting (a) insights from follow-up exploratory analysis, (b) assessment of the meaning of the replication (or not) - e.g., for a failure to replicate, are the differences between original and present study ones that definitely, plausibly, or are unlikely to have been moderators of the result, and (c) discussion of any objections or challenges raised by the current and original authors about the replication attempt.  None of these need to be long.
+
+The reproduction attempt highlighted a few lessons for me:
+
+##### Open materials are incredibly valuable
+This activity really illustrated the importance of open materials. I don't think I could have reproduced the estimates in the paper without looking at the authors' original code. Minor inconsistencies between manuscripts and the accompanying analysis pipelines are surely inevitable. This may be due to human error or it may simply be due to miscommunication between author and reader. By posting the analysis pipeline online, these inconsistencies can be resolved.
+
+In addition, any scientist is well-acquainted with the feeling of finding something in the findings of a research report strange and wishing to investigate further. When materials are public, a reader has the opportunity to investigate these oddities further without the potentially prohibitive overhead of running a whole new study themselves. In the case of this project, I was able to dig further into strange findings regarding the acceptance strategy and come to a different interpretation than I otherwise would have been able to without the open data. In general, this type of exploratory analysis could feasibly open up whole new research programs that would have been left undiscovered if the opportunity had not been made available by the author. In this way, open data has the potential to push science forward.
+
+##### Scaling is confusing
+Scaling is a powerful tool, but opens up many degrees of freedom that could potentially inflate type 1 error. This may be a function of my own ignorance, but it seems to be pretty ambiguous when and how one should center or scale values. There are situations when one might say scaling is certainly not necessary, but oftentimes one could justify going either direction. A researcher has the option to conduct any number or combination of scaling procedures (e.g. grand-mean scaling, grand-mean centering, person-mean scaling, person-mean centering, normalization between 0-1) and these could be done on any permutation of the variables being modeled. I found it odd that the authors of this paper would person-mean center the lagged emotion variable, but not the current emotion response variable. I would personally like to see a stronger statistically backed set of guidelines for exactly when and how scaling should or should not be conducted.
+
+##### Chance to practice RI-CLPM
+This dataset provided a fun opportunity to practice the random-intercept cross lagged panel model. The RI-CLPM allows you to test bidirectional temporal relationships between variables while controlling for autoregressive effects. In addition, the addition of a participant random intercept allows you to account for stability in individuals that can inflate the estimates of your variables of interest. Prior research has shown that reappraisal is effective for attenuating negative emotion in a lasting way. Other research has shown that people prefer reappraisal for low-intensity negative emotion. The fitted RI-CLP models modeling these bidirectional relationships fit only marginally well, with the CFI, RMSEA, and SRMR all teetering just a bit past the traditional cutoffs for SEM models. That being said, there may be an issue in that many participants in these data did not have negative emotions to regulate. Therefore, theoretically, we should expect to see a curvilinear relationship where reappraisal use is low for extreme values of negative emotion and high for midrange values of negative emotion. In any event, the exercise helped me to learn how to fit a model of this sort which will be useful for my future research. 
+
+
 
 ### Analysis requirements
 ```{r}
